@@ -1,0 +1,24 @@
+EasyCurve
+	What is the CurveEditorPrevies Type
+	Get Rid of CurveEditorPrevies ???
+	Add Setting for Default Rect
+	Works With all dthe Formatters
+	
+EasyFormatting
+	FontSizeAttribute
+	FontSizeAttribute, ColorAttribute, LabelAttribute, ConditionalFormattingAttribute : FormattingAttribute
+	OnValueChange works with all the other Attributes
+	
+EasyMembers
+	Support Button With Return Value
+	Support Button With Parameters   ???
+	Support List
+	Support Custom Types
+	Works with All the Formatting
+	
+EasyMessages
+	FontSize Comes from FormattingAttribute
+	EasyWarning & EasyError ???
+	
+
+	

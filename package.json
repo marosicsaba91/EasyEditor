@@ -1,0 +1,14 @@
+{
+  "name": "com.marosi.easyeditor",
+  "version": "1.0.0",
+  "displayName": "Easy Editor",
+  "description": "Tools making the editor tasks easier",
+  "unity": "2022.3",
+  "type": "library",
+  "hideInEditor": false,
+  "author": {
+    "name": "Csaba Marosi",
+    "email": "marosicsaba91@gmail.com",
+    "url": "csabamarosi.net/unity-tools/"
+  }
+}
