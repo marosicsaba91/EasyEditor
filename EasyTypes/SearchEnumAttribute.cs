@@ -14,7 +14,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	/// <summary>
 	/// Put this attribute on a public (or SerializeField) enum in a

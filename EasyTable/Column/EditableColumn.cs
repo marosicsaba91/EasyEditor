@@ -2,7 +2,7 @@
 using System;
 using UnityEngine;
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	public abstract class EditableColumn<TRow, TValue> : Column<TRow> where TValue : IEquatable<TValue>
 	{

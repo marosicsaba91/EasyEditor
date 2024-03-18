@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	public class GUITable
 	{
@@ -188,8 +188,7 @@ namespace EasyInspector
 			if (clickOnRow == null)
 				return false;
 
-			if (rowButtonStyle == null)
-				rowButtonStyle = new GUIStyle(GUI.skin.label);
+			rowButtonStyle ??= new GUIStyle(GUI.skin.label);
 			bool click = GUI.Button(position, GUIContent.none, rowButtonStyle);
 
 			return click;

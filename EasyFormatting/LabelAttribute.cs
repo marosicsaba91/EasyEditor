@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	public class LabelAttribute : FormattingAttribute 
 	{

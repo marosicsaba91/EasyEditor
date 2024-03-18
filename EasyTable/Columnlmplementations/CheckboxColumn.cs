@@ -4,7 +4,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	public class CheckboxColumn<TRow> : EditableColumn<TRow, bool>
 	{

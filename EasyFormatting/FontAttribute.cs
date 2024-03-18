@@ -1,4 +1,4 @@
-﻿namespace EasyInspector
+﻿namespace EasyEditor
 {
 	public class FontAttribute : FormattingAttribute 
 	{ 

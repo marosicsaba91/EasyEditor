@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	public enum DisplayColor
 	{

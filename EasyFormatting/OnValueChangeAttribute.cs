@@ -2,7 +2,7 @@
 using System.Reflection;
 using UnityEngine;
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	public class OnValueChangeAttribute : FormattingAttribute
 	{

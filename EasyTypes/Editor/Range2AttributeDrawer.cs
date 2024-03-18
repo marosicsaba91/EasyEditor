@@ -3,7 +3,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace EasyInspector.Editor
+namespace EasyEditor.Editor
 {
 	[CustomPropertyDrawer(typeof(Range2Attribute))]
 	public class Range2AttributeDrawer : PropertyDrawer

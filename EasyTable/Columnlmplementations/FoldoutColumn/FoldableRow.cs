@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	public class FoldableRow<T>
 	{

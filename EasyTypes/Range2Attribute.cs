@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	[AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
 	public class Range2Attribute : PropertyAttribute

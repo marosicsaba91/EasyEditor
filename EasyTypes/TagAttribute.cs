@@ -4,7 +4,7 @@
 using UnityEditor;
 #endif
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	public class TagAttribute : PropertyAttribute { }
 

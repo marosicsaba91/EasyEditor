@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	public class TreeNode<T>
 	{

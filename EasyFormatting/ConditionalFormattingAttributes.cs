@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	public abstract class ConditionalFormattingAttribute : FormattingAttribute
 	{

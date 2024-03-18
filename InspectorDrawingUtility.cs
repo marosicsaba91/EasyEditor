@@ -6,7 +6,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	public static class InspectorDrawingUtility
 	{

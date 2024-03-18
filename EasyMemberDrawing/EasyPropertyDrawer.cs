@@ -1,14 +1,15 @@
 ﻿#if UNITY_EDITOR
+using EasyEditor;
 using System;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace EasyInspector
+namespace EasyEditor
 {
-	[CustomPropertyDrawer(typeof(EasyMember))]
-	public class EasyMemberDrawer : PropertyDrawer
+	[CustomPropertyDrawer(typeof(EasyProperty))]
+	public class EasyPropertyDrawer : PropertyDrawer
 	{
 		string _memberName;
 
@@ -16,8 +17,7 @@ namespace EasyInspector
 		Type _ownerType;
 		Object _serializedObject;
 		object _owner;
-		EasyMember _easyMember;
-		MethodInfo _buttonMethodInfo;
+		EasyProperty _easyMember;
 		FieldInfo _fieldInfo;
 		PropertyInfo _propertyInfo;
 
@@ -25,22 +25,20 @@ namespace EasyInspector
 		{
 			if (_serializedObject == null) return;
 
-			label = _easyMember.useMemberNameAsLabel
-				? new(ObjectNames.NicifyVariableName(_easyMember.memberName))
+			label = _easyMember.usePropertyNameAsLabel
+				? new(ObjectNames.NicifyVariableName(_easyMember.propertyName))
 				: label;
 
-			// If member is a method
-			if (_buttonMethodInfo != null)
-				DrawButton(position, label);
+			Undo.RecordObject(_serializedObject, "Inspector Member Changed");
+
+			if (_fieldInfo != null)
+				DrawField(position, property, label);
+			else if (_propertyInfo != null)
+				DrawProperty(position, property, label);
 			else
 			{
-				Undo.RecordObject(_serializedObject, "Inspector Member Changed");
-				if (_fieldInfo != null)
-					DrawField(position, property, label);
-				else if (_propertyInfo != null)
-					DrawProperty(position, property, label);
-				else
-					HandleError(position, label, $"No valid member named: {_easyMember.memberName}");
+				EasyMemberUtility.HandleTypeError(position, label, $"No valid member named: {_easyMember.propertyName}");
+				_memberName = null;
 			}
 		}
 
@@ -59,8 +57,8 @@ namespace EasyInspector
 			}
 			catch (InvalidCastException)
 			{
+				EasyMemberUtility.HandleTypeError(position, label, $" Type: {_type} is not supported type for DisplayMember!");
 				_memberName = null;
-				HandleError(position, label, $" Type: {_type} is not supported type for DisplayMember!");
 			}
 
 
@@ -94,7 +92,9 @@ namespace EasyInspector
 			catch (InvalidCastException)
 			{
 				_memberName = null;
-				HandleError(position, label, $" Type: {_type} is not supported type for DisplayMember!");
+				EasyMemberUtility.HandleTypeError(position, label, $" Type: {_type} is not supported type for DisplayMember!");
+				_memberName = null;
+
 			}
 
 			property.isExpanded = isExpanded;
@@ -104,44 +104,22 @@ namespace EasyInspector
 			property.isExpanded = isExpanded;
 		}
 
-		private void DrawButton(Rect position, GUIContent label)
-		{
-			if (GUI.Button(position, label))
-				_buttonMethodInfo.Invoke(_owner, Array.Empty<object>());
-		}
-
-		void HandleError(Rect position, GUIContent label, string message)
-		{
-			Rect labelPos = position;
-			labelPos.width = EditorHelper.LabelWidth;
-			Rect contentPos = EditorHelper.ContentRect(position);
-			EditorGUI.LabelField(labelPos, label);
-			EditorHelper.DrawErrorBox(contentPos);
-			EditorGUI.LabelField(contentPos, message);
-			_memberName = null;
-		}
-
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
 		{
 			SetupMemberInfo(property);
-
-			if (_buttonMethodInfo != null)
-				return EditorGUIUtility.singleLineHeight;
-
 			return AnythingHeight(_type, property);
 		}
 
 		void SetupMemberInfo(SerializedProperty property)
 		{
-			_easyMember = (EasyMember)property.GetObjectOfProperty();
-			if (_memberName != _easyMember.memberName)
+			_easyMember = (EasyProperty)property.GetObjectOfProperty();
+			if (_memberName != _easyMember.propertyName)
 			{
 				_owner = property.GetObjectWithProperty();
 				_ownerType = _owner.GetType();
-				_memberName = _easyMember.memberName;
-				if (TryGetMethodInfo(_ownerType, _memberName, out _buttonMethodInfo))
-					_type = _buttonMethodInfo.ReturnType;
-				else if (TryGetFieldInfo(_ownerType, _memberName, out _fieldInfo))
+				_memberName = _easyMember.propertyName;
+				
+				if (TryGetFieldInfo(_ownerType, _memberName, out _fieldInfo))
 					_type = _fieldInfo.FieldType;
 				else if (TryGetPropertyInfo(_ownerType, _memberName, out _propertyInfo))
 					_type = _propertyInfo.PropertyType;
@@ -162,40 +140,17 @@ namespace EasyInspector
 				return Nice4X4MatrixDrawer.PropertyHeight(property);  // Add Universal solution
 
 			return EditorGUIUtility.singleLineHeight;
-		}
-
-		const BindingFlags binding =
-			BindingFlags.Instance |
-			BindingFlags.Static |
-			BindingFlags.Public |
-			BindingFlags.NonPublic |
-			BindingFlags.FlattenHierarchy;
-
-		public static bool TryGetMethodInfo(Type ownerType, string name, out MethodInfo methodInfo)
-		{
-			MethodInfo method = ownerType.GetMethod(name, binding);
-
-			if (method != null && IsNullOrEmpty(method.GetParameters()))
-			{
-				methodInfo = method;
-				return true;
-			}
-
-			methodInfo = null;
-			return false;
-		}
-
-		static bool IsNullOrEmpty<T>(T[] array) => array == null || array.Length == 0;
+		} 
 
 		public static bool TryGetFieldInfo(Type ownerType, string name, out FieldInfo fieldInfo)
 		{
-			fieldInfo = ownerType.GetField(name, binding);
+			fieldInfo = ownerType.GetField(name, EasyMemberUtility.membersBindings);
 			return fieldInfo != null;
 		}
 
 		public static bool TryGetPropertyInfo(Type ownerType, string name, out PropertyInfo propertyInfo)
 		{
-			PropertyInfo property = ownerType.GetProperty(name, binding);
+			PropertyInfo property = ownerType.GetProperty(name, EasyMemberUtility.membersBindings);
 
 			if (property != null && property.GetMethod != null)
 			{

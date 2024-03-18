@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	[CustomPropertyDrawer(typeof(FormattingAttribute), true)]
 	public class FormattingAttributeDrawer : PropertyDrawer

@@ -10,7 +10,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	public class SortingLayerAttribute : PropertyAttribute { }
 

@@ -3,7 +3,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	public class BoolColumn<TRow> : ValueColumn<TRow, bool>
 	{

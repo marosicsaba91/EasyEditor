@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	[CustomPropertyDrawer(typeof(Matrix4x4))]
 	public class Nice4X4MatrixDrawer : PropertyDrawer

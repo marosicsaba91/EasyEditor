@@ -1,8 +1,7 @@
 ﻿using System;
 
-namespace EasyInspector
+namespace EasyEditor
 {
-
 	public enum MessageType
 	{
 		Info,

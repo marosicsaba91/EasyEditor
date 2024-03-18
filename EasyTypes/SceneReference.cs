@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	[Serializable]
 	public class SceneReference

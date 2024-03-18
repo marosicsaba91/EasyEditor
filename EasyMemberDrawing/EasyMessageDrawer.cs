@@ -5,7 +5,7 @@ using System.Text;
 using UnityEditor;
 using UnityEngine;
 
-namespace EasyInspector
+namespace EasyEditor
 {
 	[CustomPropertyDrawer(typeof(EasyMessage), useForChildren: true)]
 	public class EasyMessageDrawer : PropertyDrawer
