@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace EasyEditor
 {
-	static class EasyMemberUtility
+	static class EasyEditorUtility
 	{
 		internal static void HandleTypeError(Rect position, GUIContent label, string message)
 		{
@@ -17,7 +17,7 @@ namespace EasyEditor
 			EditorGUI.LabelField(contentPos, message);
 		}
 
-		public const BindingFlags membersBindings =
+		public const BindingFlags allMembersBindings =
 			BindingFlags.Instance |
 			BindingFlags.Static |
 			BindingFlags.Public |

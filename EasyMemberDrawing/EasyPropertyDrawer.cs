@@ -37,7 +37,7 @@ namespace EasyEditor
 				DrawProperty(position, property, label);
 			else
 			{
-				EasyMemberUtility.HandleTypeError(position, label, $"No valid member named: {_easyMember.propertyName}");
+				EasyEditorUtility.HandleTypeError(position, label, $"No valid member named: {_easyMember.propertyName}");
 				_memberName = null;
 			}
 		}
@@ -57,7 +57,7 @@ namespace EasyEditor
 			}
 			catch (InvalidCastException)
 			{
-				EasyMemberUtility.HandleTypeError(position, label, $" Type: {_type} is not supported type for DisplayMember!");
+				EasyEditorUtility.HandleTypeError(position, label, $" Type: {_type} is not supported type for DisplayMember!");
 				_memberName = null;
 			}
 
@@ -92,7 +92,7 @@ namespace EasyEditor
 			catch (InvalidCastException)
 			{
 				_memberName = null;
-				EasyMemberUtility.HandleTypeError(position, label, $" Type: {_type} is not supported type for DisplayMember!");
+				EasyEditorUtility.HandleTypeError(position, label, $" Type: {_type} is not supported type for DisplayMember!");
 				_memberName = null;
 
 			}
@@ -144,13 +144,13 @@ namespace EasyEditor
 
 		public static bool TryGetFieldInfo(Type ownerType, string name, out FieldInfo fieldInfo)
 		{
-			fieldInfo = ownerType.GetField(name, EasyMemberUtility.membersBindings);
+			fieldInfo = ownerType.GetField(name, EasyEditorUtility.allMembersBindings);
 			return fieldInfo != null;
 		}
 
 		public static bool TryGetPropertyInfo(Type ownerType, string name, out PropertyInfo propertyInfo)
 		{
-			PropertyInfo property = ownerType.GetProperty(name, EasyMemberUtility.membersBindings);
+			PropertyInfo property = ownerType.GetProperty(name, EasyEditorUtility.allMembersBindings);
 
 			if (property != null && property.GetMethod != null)
 			{
