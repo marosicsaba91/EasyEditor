@@ -20,10 +20,10 @@ namespace EasyEditor
 
 		public void Initialize(object owner)
 		{
-#if UNITY_EDITOR
 			if (_initialized)
 				return;
 
+#if UNITY_EDITOR
 			const BindingFlags binding = InspectorDrawingUtility.bindings;
 			_methodInfo = owner.GetType().GetMethod(_callbackMember, binding);
 			if (_methodInfo != null)

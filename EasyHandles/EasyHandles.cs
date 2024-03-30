@@ -1,5 +1,4 @@
-﻿using UnityEngine;
-using System;
+﻿using UnityEngine; 
 
 
 #if UNITY_EDITOR
@@ -160,7 +159,11 @@ namespace EasyEditor
 
 		static Vector3 DrawSmallPositionHandle(Vector3 position, Quaternion rotation, ForcedAxisMode mode)
 		{
+#if UNITY_EDITOR
 			Color color = Handles.color;
+#else
+			Color color = Color.white;
+#endif
 			Vector3 Arrow(Vector3 dir, Color dirColor)
 			{
 				Quaternion rot = rotation * Quaternion.Euler(dir * 90);

@@ -1,6 +1,5 @@
-﻿using EasyEditor;
-using System.Reflection;
-using UnityEditor;
+﻿
+using System.Reflection; 
 using UnityEngine;
 
 namespace EasyEditor
@@ -9,12 +8,14 @@ namespace EasyEditor
 	{
 		internal static void HandleTypeError(Rect position, GUIContent label, string message)
 		{
+#if UNITY_EDITOR
 			Rect labelPos = position;
 			labelPos.width = EditorHelper.LabelWidth;
 			Rect contentPos = EditorHelper.ContentRect(position);
-			EditorGUI.LabelField(labelPos, label);
+			UnityEditor.EditorGUI.LabelField(labelPos, label);
 			EditorHelper.DrawErrorBox(contentPos);
-			EditorGUI.LabelField(contentPos, message);
+			UnityEditor.EditorGUI.LabelField(contentPos, message);
+#endif
 		}
 
 		public const BindingFlags allMembersBindings =

@@ -57,9 +57,9 @@ namespace EasyEditor
 
 		public void Initialize(object owner)
 		{
-#if UNITY_EDITOR
 			if (_initialized)
 				return;
+#if UNITY_EDITOR
 
 			InspectorDrawingUtility.TryGetAGetterFromMember(owner.GetType(), _colorMember, out _colorGetter);
 			_initialized = true;
