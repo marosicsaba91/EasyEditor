@@ -30,22 +30,24 @@ namespace Asteroids.Editor
 				if (managedReferenceFieldType == null)
 					return;
 
-				DrawTypePicker(position, property, managedReferenceFieldType, att);
+				DrawTypePicker(position, property, label, managedReferenceFieldType, att);
 			}
 
 			// Draw the property of the selected type
 			EditorGUI.PropertyField(position, property, label, includeChildren: true);
 		}
 
-		static void DrawTypePicker(Rect position, SerializedProperty property, Type managedReferenceFieldType, TypePickerAttribute att)
+		static void DrawTypePicker(Rect position, SerializedProperty property, GUIContent label, Type managedReferenceFieldType, TypePickerAttribute att)
 		{
 			position.height = EditorGUIUtility.singleLineHeight;
 			List<Type> inheritedTypes = GetInheritedNonAbstractTypes(managedReferenceFieldType);
 
 			int currentTypeIndex;
-			Rect popupPosition = EditorHelper.ContentRect(position);
 
-			Type currentType = GetRealTypeFromTypename(property.managedReferenceFullTypename);
+			float labelWidth = GUI.skin.label.CalcSize(label).x;
+			position.SliceOut(labelWidth + 12, Side.Left);
+
+			Type currentType = GetRealTypeFromTypeName(property.managedReferenceFullTypename);
 			inheritedTypes = ApplyTypeFilter(property, att, inheritedTypes);
 
 			if (currentType == null)
@@ -56,8 +58,8 @@ namespace Asteroids.Editor
 
 				if (!property.IsExpandable() || att.forceSmall)
 				{
-					popupPosition.width = 20;
-					popupPosition.x -= 20;
+					position.width = 20;
+					position.x -= 20;
 				}
 			}
 
@@ -67,7 +69,7 @@ namespace Asteroids.Editor
 
 			int tempIndent = EditorGUI.indentLevel;
 			EditorGUI.indentLevel = 0;
-			int resultTypeIndex = EditorGUI.Popup(popupPosition, currentTypeIndex, options);
+			int resultTypeIndex = EditorGUI.Popup(position, currentTypeIndex, options);
 			EditorGUI.indentLevel = tempIndent;
 
 			if (resultTypeIndex != currentTypeIndex)
@@ -108,7 +110,7 @@ namespace Asteroids.Editor
 
 		static List<Type> ApplyTypeFilter(SerializedProperty property, TypePickerAttribute att, List<Type> inheritedTypes)
 		{
-			if (att.filterMethod!= null && att.filterMethod.Length > 0)
+			if (att.filterMethod != null && att.filterMethod.Length > 0)
 			{
 				object containingObject = property.GetObjectWithProperty();
 				Type t = property.GetObjectWithProperty().GetType();
@@ -174,66 +176,41 @@ namespace Asteroids.Editor
 			return inheritedTypes;
 		}
 
-		static Type GetPropertyFieldType(SerializedProperty property)
+		static Type GetPropertyFieldType(SerializedProperty property) => property.propertyType switch
 		{
-			switch (property.propertyType)
-			{
-				case SerializedPropertyType.Boolean:
-					return typeof(bool);
-				case SerializedPropertyType.Float:
-					return typeof(float);
-				case SerializedPropertyType.Integer:
-					return typeof(int);
-				case SerializedPropertyType.String:
-					return typeof(string);
-				case SerializedPropertyType.Bounds:
-					return typeof(Bounds);
-				case SerializedPropertyType.Character:
-					return typeof(char);
-				case SerializedPropertyType.Color:
-					return typeof(Color);
-				case SerializedPropertyType.Enum:
-					return typeof(Enum);
-				case SerializedPropertyType.Gradient:
-					return typeof(Gradient);
-				case SerializedPropertyType.Quaternion:
-					return typeof(Quaternion);
-				case SerializedPropertyType.Rect:
-					return typeof(Rect);
-				case SerializedPropertyType.Vector2:
-					return typeof(Vector2);
-				case SerializedPropertyType.Vector3:
-					return typeof(Vector3);
-				case SerializedPropertyType.Vector4:
-					return typeof(Vector4);
-				case SerializedPropertyType.AnimationCurve:
-					return typeof(AnimationCurve);
-				case SerializedPropertyType.BoundsInt:
-					return typeof(BoundsInt);
-				case SerializedPropertyType.LayerMask:
-					return typeof(LayerMask);
-				case SerializedPropertyType.RectInt:
-					return typeof(RectInt);
-				case SerializedPropertyType.Vector2Int:
-					return typeof(Vector2Int);
-				case SerializedPropertyType.Vector3Int:
-					return typeof(Vector3Int);
-				case SerializedPropertyType.ManagedReference:
-					return GetManagedReferenceFieldType(property);
-				default:
-					return property.GetObjectOfProperty()?.GetType();
-			}
-		}
+			SerializedPropertyType.Boolean => typeof(bool),
+			SerializedPropertyType.Float => typeof(float),
+			SerializedPropertyType.Integer => typeof(int),
+			SerializedPropertyType.String => typeof(string),
+			SerializedPropertyType.Bounds => typeof(Bounds),
+			SerializedPropertyType.Character => typeof(char),
+			SerializedPropertyType.Color => typeof(Color),
+			SerializedPropertyType.Enum => typeof(Enum),
+			SerializedPropertyType.Gradient => typeof(Gradient),
+			SerializedPropertyType.Quaternion => typeof(Quaternion),
+			SerializedPropertyType.Rect => typeof(Rect),
+			SerializedPropertyType.Vector2 => typeof(Vector2),
+			SerializedPropertyType.Vector3 => typeof(Vector3),
+			SerializedPropertyType.Vector4 => typeof(Vector4),
+			SerializedPropertyType.AnimationCurve => typeof(AnimationCurve),
+			SerializedPropertyType.BoundsInt => typeof(BoundsInt),
+			SerializedPropertyType.LayerMask => typeof(LayerMask),
+			SerializedPropertyType.RectInt => typeof(RectInt),
+			SerializedPropertyType.Vector2Int => typeof(Vector2Int),
+			SerializedPropertyType.Vector3Int => typeof(Vector3Int),
+			SerializedPropertyType.ManagedReference => GetManagedReferenceFieldType(property),
+			_ => property.GetObjectOfProperty()?.GetType(),
+		};
 
 		static Type GetManagedReferenceFieldType(SerializedProperty property)
 		{
-			Type realPropertyType = GetRealTypeFromTypename(property.managedReferenceFieldTypename);
+			Type realPropertyType = GetRealTypeFromTypeName(property.managedReferenceFieldTypename);
 			if (realPropertyType != null)
 				return realPropertyType;
 			return null;
 		}
 
-		static Type GetRealTypeFromTypename(string stringType)
+		static Type GetRealTypeFromTypeName(string stringType)
 		{
 			(string AssemblyName, string ClassName) names = GetSplitNamesFromTypename(stringType);
 			Type realType = Type.GetType($"{names.ClassName}, {names.AssemblyName}");

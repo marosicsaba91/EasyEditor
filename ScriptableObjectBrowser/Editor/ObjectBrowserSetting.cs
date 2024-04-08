@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
-using UnityEngine; 
+using UnityEngine;
 
 
 namespace EasyEditor
@@ -136,6 +136,16 @@ namespace EasyEditor
 			}
 		}
 
+		public void ResetLayout(Type selected)
+		{
+			TypeDisplaySetting typeSetting = allTypeInfo.Find(x => x.ObjectType == selected);
+			if (typeSetting == null) return;
+
+			typeSetting.properties = new();
+			typeSetting.openedObjects = new();
+			isDirty = true;
+		}
+
 		// ----------------- Singleton -----------------
 
 		const string settingKey = "ObjectBrowserSetting";
@@ -171,11 +181,12 @@ namespace EasyEditor
 				EditorPrefs.SetString(settingKey, objectBrowserSettingString);
 			}
 		}
+
+		public void SetDirty() => isDirty = true;
 	}
 
-
 	[Serializable]
-	public struct TypeDisplaySetting
+	public class TypeDisplaySetting
 	{
 		public string fullTypeName;
 		public string name;
@@ -216,30 +227,47 @@ namespace EasyEditor
 			properties = new();
 		}
 
-		public readonly bool TryGetProperty(string propertyName, out PropertyDisplaySetting pds)
+		public bool TryGetPropertySettings(string fullTypeName, string propertyName, out PropertyDisplaySetting pds)
 		{
 			if (properties == null)
 			{
 				pds = default;
 				return false;
 			}
-			pds = properties.Find(x => x.name == propertyName);
-			return pds.name != null;
+			pds = properties.Find(x => x.propertyName == propertyName && x.fullTypeName == fullTypeName);
+			return pds != null;
+		}
+
+		public void SetColumnWidth(string fullTypeName, string propertyName, float width)
+		{
+			int index = properties.FindIndex(x => x.propertyName == propertyName && x.fullTypeName == fullTypeName);
+			if (index < 0)
+			{
+				PropertyDisplaySetting pds = new(fullTypeName, propertyName, width);
+				properties.Add(pds);
+			}
+			else
+			{
+				PropertyDisplaySetting pds = properties[index];
+				pds.width = width;
+			}
 		}
 	}
 
 	[Serializable]
-	public struct PropertyDisplaySetting
+	public class PropertyDisplaySetting
 	{
-		public string name;
+		public string fullTypeName;
+		public string propertyName;
 		public float width;
 
-		public PropertyDisplaySetting(string name, float width)
+		public PropertyDisplaySetting(string fullTypeName, string propertyName, float width)
 		{
-			this.name = name;
+			this.fullTypeName = fullTypeName;
+			this.propertyName = propertyName;
 			this.width = width;
 		}
 	}
-} 
+}
 
 #endif
