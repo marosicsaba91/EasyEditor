@@ -109,7 +109,7 @@ namespace EasyEditor
 				return false;
 			}
 			typeSetting = allTypeInfo[index];
-			return true;
+			return typeSetting != null;
 		}
 
 		public void SetSelectedType(Type type)

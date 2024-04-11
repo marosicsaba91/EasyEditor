@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using static UnityEditor.LightingExplorerTableColumn;
 using Object = UnityEngine.Object;
 
 namespace EasyEditor
@@ -29,15 +28,6 @@ namespace EasyEditor
 		Vector2 scrollPosition;
 		GUIStyle selectedButtonStyle;
 
-		GUIStyle SelectedButtonStyle
-		{
-			get
-			{
-				selectedButtonStyle ??= new(GUI.skin.button) { fontStyle = FontStyle.Bold, normal = { textColor = new Color(0.5f, 0.7f, 1) } };
-				return selectedButtonStyle;
-			}
-		}
-
 		[MenuItem("Tools/Objects Browser")]
 		public static void Open()
 		{
@@ -48,6 +38,8 @@ namespace EasyEditor
 
 		void OnGUI()
 		{
+			selectedButtonStyle = new(GUI.skin.button) { fontStyle = FontStyle.Bold, normal = { textColor = new Color(0.5f, 0.7f, 1) } };
+
 			ObjectBrowserSetting settings = ObjectBrowserSetting.Instance;
 			settings.CleanupSetting();
 			IReadOnlyList<TypeDisplaySetting> displayedTypes = settings.GetPinnedTypesInOrder();
@@ -59,11 +51,12 @@ namespace EasyEditor
 			newPic = newPic != null ? newPic : EditorGUIUtility.IconContent("CreateAddNew").image;
 
 			bool hasSelected = settings.TryGetSelectedType(out TypeDisplaySetting selectedTypeSetting);
+			Type selectedType = hasSelected ? selectedTypeSetting.ObjectType : null;
 
 			Rect fullWindowRect = position;
 			fullWindowRect.position = Vector2.zero;
-			DrawTypeTabs(displayedTypes, selectedTypeSetting.ObjectType, settings, ref fullWindowRect);
-			DrawFooter(selectedTypeSetting.ObjectType, settings, ref fullWindowRect);
+			DrawTypeTabs(displayedTypes, selectedType, settings, ref fullWindowRect);
+			DrawFooter(selectedType, settings, ref fullWindowRect);
 
 			if (hasSelected)
 				DrawObjectClass(settings, selectedTypeSetting, settings.ShowPrefabs, settings.SelectedView, ref fullWindowRect);
@@ -198,7 +191,7 @@ namespace EasyEditor
 
 				if (isSelected)
 					GUI.color = new Color(0.8f, 0.8f, 0.8f);
-				GUIStyle style = isSelected ? SelectedButtonStyle : GUI.skin.button;
+				GUIStyle style = isSelected ? selectedButtonStyle : GUI.skin.button;
 				if (GUI.Button(tabRect, new GUIContent($" {name} ({count})", texture), style))
 					settings.SetSelectedType(type);
 				GUI.color = Color.white;
@@ -403,7 +396,6 @@ namespace EasyEditor
 				{
 					Column column = columns[columnI];
 					property = serializedObject.FindProperty(column.propertyName);
-
  					rect = EditorGUILayout.GetControlRect(
 						GUILayout.Width(column.width),
 						GUILayout.Height(maxHeigh));
@@ -524,8 +516,8 @@ namespace EasyEditor
 			}
 
 			bool pathExists = Directory.Exists(_savePath);
-			string warning = "< Select a folder or file to add path! >";
-			string buttonString = $"Create New:   {(pathExists ? _savePath : warning)}";
+			string warning = "Select a folder or file to create new asset there!";
+			string buttonString = pathExists ? $"Create New:  {_savePath}" : warning;
 
 			GUI.enabled = pathExists;
 			if (GUI.Button(rect, buttonString))
