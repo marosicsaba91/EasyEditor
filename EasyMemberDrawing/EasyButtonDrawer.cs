@@ -1,56 +1,36 @@
 ﻿#if UNITY_EDITOR
-using EasyEditor;
 using System;
-using System.Reflection; 
+using System.Reflection;
 using UnityEditor;
-using UnityEngine;
+using UnityEngine; 
 using Object = UnityEngine.Object;
 
 namespace EasyEditor
 {
 	[CustomPropertyDrawer(typeof(EasyButton))]
 	public class EasyButtonDrawer : PropertyDrawer
-	{ 
+	{
 		Object _serializedObject;
-		object _owner;
 		EasyButton _easyButton;
-		MethodInfo _buttonMethodInfo;
-
-		string _methodName;
-		Type _ownerType;   
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
-			SetupMemberInfo(property);
-			if (_serializedObject == null) return;
+			_easyButton = (EasyButton)property.GetObjectOfProperty();
+			object owner = property.GetObjectWithProperty();
+
+			bool methodFound = TryGetMethodInfo(owner.GetType(), _easyButton.methodName, out MethodInfo methodInfo);
+			_serializedObject = property.serializedObject.targetObject; if (_serializedObject == null) return;
 
 			label = _easyButton.useMethodNameAsLabel
 				? new(ObjectNames.NicifyVariableName(_easyButton.methodName))
 				: label;
-			
-			if (_buttonMethodInfo != null)
-				DrawButton(position, label);
+
+			if (methodFound)
+				DrawButton(position, label, owner, methodInfo);
 			else
-			{
-				EasyEditorUtility.HandleTypeError(position, label, $"No valid member named: {_easyButton.methodName}"); 
-				_methodName = null;
-			}
+				EasyEditorUtility.HandleTypeError(position, label, $"No valid member named: {_easyButton.methodName}");
 
 		}
-
-		void SetupMemberInfo(SerializedProperty property)
-		{
-			_easyButton = (EasyButton)property.GetObjectOfProperty();
-			if (_methodName != _easyButton.methodName)
-			{
-				_owner = property.GetObjectWithProperty();
-				_ownerType = _owner.GetType();
-				_methodName = _easyButton.methodName;
-				TryGetMethodInfo(_ownerType, _methodName, out _buttonMethodInfo);
-				_serializedObject = property.serializedObject.targetObject;
-			}
-		}
-
 
 		public static bool TryGetMethodInfo(Type ownerType, string name, out MethodInfo methodInfo)
 		{
@@ -68,15 +48,14 @@ namespace EasyEditor
 
 		static bool IsNullOrEmpty<T>(T[] array) => array == null || array.Length == 0;
 
-		void DrawButton(Rect position, GUIContent label)
+		void DrawButton(Rect position, GUIContent label, object owner, MethodInfo methodInfo)
 		{
 			if (GUI.Button(position, label))
-				_buttonMethodInfo.Invoke(_owner, Array.Empty<object>());
+				methodInfo.Invoke(owner, Array.Empty<object>());
 		}
 
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-		{ 
-
+		{
 			return EditorGUIUtility.singleLineHeight;
 		}
 	}
