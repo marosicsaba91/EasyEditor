@@ -135,7 +135,7 @@ namespace EasyEditor
 		{
 			if (!monoBehaviourScenesCache.TryGetValue(type, out List<Object> objects))
 			{
-				objects = Object.FindObjectsOfType(type).ToList();
+				objects = Object.FindObjectsByType(type, FindObjectsInactive.Exclude, FindObjectsSortMode.None).ToList();
 				monoBehaviourScenesCache.Add(type, objects);
 			}
 
