@@ -134,8 +134,8 @@ namespace EasyEditor
 				return false;
 			}
 
-			name = indexedName.Substring(0, indexedName.IndexOf("[", StringComparison.Ordinal));
-			string insideBrackets = indexedName.Substring(indexedName.IndexOf("[", StringComparison.Ordinal))
+			name = indexedName[..indexedName.IndexOf("[", StringComparison.Ordinal)];
+			string insideBrackets = indexedName[indexedName.IndexOf("[", StringComparison.Ordinal)..]
 				.Replace("[", "")
 				.Replace("]", "");
 			index = Convert.ToInt32(insideBrackets);
