@@ -44,8 +44,13 @@ namespace EasyEditor
 
 		static readonly Color errorBackgroundColorLight = new(1f, 0.65f, 0.6f);
 		static readonly Color errorBackgroundColorDark = new(0.56f, 0.23f, 0.21f);
+
+		static readonly Color warningBackgroundColorLight = new(1f, 0.65f, 0.6f);
+		static readonly Color warningBackgroundColorDark = new(0.56f, 0.23f, 0.21f);
 		public static Color ErrorBackgroundColor =>
 			EditorGUIUtility.isProSkin ? errorBackgroundColorDark : errorBackgroundColorLight;
+		public static Color WarningBackgroundColor =>
+			EditorGUIUtility.isProSkin ? warningBackgroundColorDark : warningBackgroundColorLight;
 
 		public static readonly Color functionColor =
 			EditorGUIUtility.isProSkin ? Color.yellow : new Color(0.2f, 0.56f, 1f);
@@ -129,6 +134,8 @@ namespace EasyEditor
 
 		public static Rect DrawErrorBox(Rect position, bool borderInside = true) =>
 			DrawBox(position, ErrorBackgroundColor, tableBorderColor, borderInside);
+		public static Rect DrawWarningBox(Rect position, bool borderInside = true) =>
+			DrawBox(position, WarningBackgroundColor, tableBorderColor, borderInside);
 
 		static Material _mat;
 

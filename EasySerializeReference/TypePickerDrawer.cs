@@ -10,7 +10,7 @@ using UnityEngine;
 namespace Asteroids.Editor
 {
 	[CustomPropertyDrawer(typeof(TypePickerAttribute))]
-	public class TypeSelectorDrawer : PropertyDrawer
+	public class TypePickerDrawer : PropertyDrawer
 	{
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
@@ -26,7 +26,7 @@ namespace Asteroids.Editor
 			else
 			{
 
-				Type managedReferenceFieldType = GetManagedReferenceFieldType(property);
+				Type managedReferenceFieldType = property.GetManagedReferenceFieldType();
 				if (managedReferenceFieldType == null)
 					return;
 
@@ -47,7 +47,7 @@ namespace Asteroids.Editor
 			float labelWidth = GUI.skin.label.CalcSize(label).x;
 			position.SliceOut(labelWidth + 12, Side.Left);
 
-			Type currentType = GetRealTypeFromTypeName(property.managedReferenceFullTypename);
+			Type currentType = property.GetManagedReferenceFieldType();
 			inheritedTypes = ApplyTypeFilter(property, att, inheritedTypes);
 
 			if (currentType == null)
@@ -198,35 +198,10 @@ namespace Asteroids.Editor
 			SerializedPropertyType.RectInt => typeof(RectInt),
 			SerializedPropertyType.Vector2Int => typeof(Vector2Int),
 			SerializedPropertyType.Vector3Int => typeof(Vector3Int),
-			SerializedPropertyType.ManagedReference => GetManagedReferenceFieldType(property),
+			SerializedPropertyType.ManagedReference => property.GetManagedReferenceFieldType(),
 			_ => property.GetObjectOfProperty()?.GetType(),
 		};
 
-		static Type GetManagedReferenceFieldType(SerializedProperty property)
-		{
-			Type realPropertyType = GetRealTypeFromTypeName(property.managedReferenceFieldTypename);
-			if (realPropertyType != null)
-				return realPropertyType;
-			return null;
-		}
-
-		static Type GetRealTypeFromTypeName(string stringType)
-		{
-			(string AssemblyName, string ClassName) names = GetSplitNamesFromTypename(stringType);
-			Type realType = Type.GetType($"{names.ClassName}, {names.AssemblyName}");
-			return realType;
-		}
-
-		static (string AssemblyName, string ClassName) GetSplitNamesFromTypename(string typename)
-		{
-			if (string.IsNullOrEmpty(typename))
-				return ("", "");
-
-			string[] typeSplitString = typename.Split(char.Parse(" "));
-			string typeClassName = typeSplitString[1];
-			string typeAssemblyName = typeSplitString[0];
-			return (typeAssemblyName, typeClassName);
-		}
 
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
 		{

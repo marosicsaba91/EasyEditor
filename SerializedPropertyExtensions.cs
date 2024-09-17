@@ -1,4 +1,5 @@
 ﻿#if UNITY_EDITOR
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ using Object = UnityEngine.Object;
 
 namespace EasyEditor
 {
-	public static class SerializedPropertyExtensions
+	public static partial class SerializedPropertyExtensions
 	{
 		public static IEnumerable<SerializedProperty> GetChildren(this SerializedProperty property)
 		{
@@ -46,6 +47,32 @@ namespace EasyEditor
 			Undo.RecordObject(targetObject, $"{property.name} has changed on {targetObject.name}");
 		}
 
+		public static Type GetManagedReferenceFieldType(this SerializedProperty property)
+		{
+			Type realPropertyType = GetManagedReferenceTypeFromTypeName(property.managedReferenceFieldTypename);
+			if (realPropertyType != null)
+				return realPropertyType;
+			return null;
+		}
+
+		static Type GetManagedReferenceTypeFromTypeName(string stringType)
+		{
+			(string AssemblyName, string ClassName) names = GetSplitNamesFromTypeName(stringType);
+			Type realType = Type.GetType($"{names.ClassName}, {names.AssemblyName}");
+			return realType;
+		}
+
+		static (string AssemblyName, string ClassName) GetSplitNamesFromTypeName(string typeName)
+		{
+			if (string.IsNullOrEmpty(typeName))
+				return ("", "");
+
+			string[] typeSplitString = typeName.Split(char.Parse(" "));
+			string typeClassName = typeSplitString[1];
+			string typeAssemblyName = typeSplitString[0];
+			return (typeAssemblyName, typeClassName);
+		}
+
 		public static Type GetTargetType(this SerializedObject obj)
 		{
 			if (obj == null)
@@ -60,7 +87,7 @@ namespace EasyEditor
 			return obj.targetObject.GetType();
 		}
 
-		/// Gets the object the property represents.
+
 		public static object GetObjectOfProperty(this SerializedProperty prop)
 		{
 			if (prop == null)
@@ -72,16 +99,32 @@ namespace EasyEditor
 			foreach (string element in elements)
 			{
 				if (TryDecomposeIndexedName(element, out int index, out string elementName))
-					obj = GetValue_(obj, elementName, index);
+					obj = GetValueAt_(obj, elementName, index);
 				else
 					obj = GetValue_(obj, element);
 			}
 
 			return obj;
 		}
+		public static object GetObjectOfProperty(this SerializedProperty prop, out Type typeOfResult)
+		{
+			typeOfResult = null;
 
-		// Sets value from SerializedProperty - even if value is nested
-		const BindingFlags mask = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+			if (prop == null) return null;
+
+			string path = prop.propertyPath.Replace(".Array.data[", "[");
+			object obj = prop.serializedObject.targetObject;
+			string[] elements = path.Split('.');
+			foreach (string element in elements)
+			{
+				if (TryDecomposeIndexedName(element, out int index, out string elementName))
+					obj = GetValueAt_(obj, elementName, index, out typeOfResult);
+				else
+					obj = GetValue_(obj, element, out typeOfResult);
+			}
+
+			return obj;
+		}
 
 		public static void SetValue(this SerializedProperty property, object newValue, string actionName = null)
 		{
@@ -97,10 +140,11 @@ namespace EasyEditor
 				if (!TryDecomposeIndexedName(element, out int index, out string elementName))
 					elementName = element;
 
+				const BindingFlags mask = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 				FieldInfo field = containingType.GetField(elementName, mask);
 				parentAndFields.Add((containingObject, field, index));
 				containingObject = index >= 0
-					? GetValue_(containingObject, field, index)
+					? GetValueAt_(containingObject, field, index)
 					: field.GetValue(containingObject);
 			}
 
@@ -115,7 +159,7 @@ namespace EasyEditor
 				int index = parentAndFields[i].index;
 
 				if (index >= 0)
-					changed |= TrySetValue_(containerObject, field, index, newValue);
+					changed |= TrySetValueAt_(containerObject, field, index, newValue);
 				else
 					changed |= TrySetValue_(containerObject, field, newValue);
 				newValue = containerObject;
@@ -141,108 +185,6 @@ namespace EasyEditor
 			index = Convert.ToInt32(insideBrackets);
 			return true;
 		}
-
-		public static object GetValue(this SerializedProperty property)
-		{
-			Object target = property.serializedObject.targetObject;
-			FieldInfo fieldInfo = GetFieldInfo(property);
-			return fieldInfo.GetValue(target);
-		}
-
-		static object GetValue_(object source, string name)
-		{
-			if (source == null)
-				return null;
-			Type type = source.GetType();
-
-
-			while (type != null)
-			{
-				FieldInfo field = type.GetField(name, mask);
-				if (field != null)
-					return field.GetValue(source);
-
-				PropertyInfo p =
-					type.GetProperty(name, mask);
-				if (p != null)
-					return p.GetValue(source, null);
-
-				type = type.BaseType;
-			}
-
-			return null;
-		}
-
-
-		static object GetValue_(object source, string name, int index)
-		{
-			if (GetValue_(source, name) is not IEnumerable enumerable)
-				return null;
-			IEnumerator enm = enumerable.GetEnumerator();
-
-			for (int i = 0; i <= index; i++)
-			{
-				if (!enm.MoveNext())
-					return null;
-			}
-
-			return enm.Current;
-		}
-
-		static object GetValue_(object source, FieldInfo field, int index)
-		{
-			if (source == null)
-				return null;
-			if (field == null)
-				return null;
-
-			Type fieldType = field.FieldType;
-			if (IsSubclassOf_GenericsSupported(fieldType, typeof(Array)) ||
-				IsSubclassOf_GenericsSupported(fieldType, typeof(List<>)))
-			{
-				IList list = (IList)field.GetValue(source);
-				return list[index];
-			}
-
-			return null;
-		}
-
-		static bool TrySetValue_(object source, FieldInfo field, object newValue)
-		{
-			if (source == null)
-				return false;
-			if (field == null)
-				return false;
-			object oldValue = field.GetValue(source);
-			if (Equals(oldValue, newValue))
-				return false;
-
-			field.SetValue(source, newValue);
-			return true;
-		}
-
-		static bool TrySetValue_(object source, FieldInfo field, int index, object newValue)
-		{
-			if (source == null)
-				return false;
-			if (field == null)
-				return false;
-
-			Type fieldType = field.FieldType;
-			if (IsSubclassOf_GenericsSupported(fieldType, typeof(Array)) ||
-				IsSubclassOf_GenericsSupported(fieldType, typeof(List<>)))
-			{
-				IList list = (IList)field.GetValue(source);
-				if (!list[index].Equals(newValue))
-				{
-					list[index] = newValue;
-					return true;
-				}
-			}
-
-			return false;
-		}
-
 
 		public static void CopyPropertyValueTo(this SerializedProperty source, SerializedProperty destination)
 		{
@@ -346,25 +288,15 @@ namespace EasyEditor
 				destination.DeleteArrayElementAtIndex(i);
 		}
 
-
-		public static double GetNumericValue(this SerializedProperty prop)
+		public static double GetNumericValue(this SerializedProperty prop) => prop.propertyType switch
 		{
-			switch (prop.propertyType)
-			{
-				case SerializedPropertyType.Integer:
-					return prop.intValue;
-				case SerializedPropertyType.Boolean:
-					return prop.boolValue ? 1d : 0d;
-				case SerializedPropertyType.Float:
-					return prop.type == "double" ? prop.doubleValue : prop.floatValue;
-				case SerializedPropertyType.ArraySize:
-					return prop.arraySize;
-				case SerializedPropertyType.Character:
-					return prop.intValue;
-				default:
-					return 0d;
-			}
-		}
+			SerializedPropertyType.Integer => prop.intValue,
+			SerializedPropertyType.Boolean => prop.boolValue ? 1d : 0d,
+			SerializedPropertyType.Float => prop.type == "double" ? prop.doubleValue : prop.floatValue,
+			SerializedPropertyType.ArraySize => prop.arraySize,
+			SerializedPropertyType.Character => prop.intValue,
+			_ => 0d,
+		};
 
 		public static bool IsNumericValue(this SerializedProperty prop) => prop.propertyType switch
 		{
@@ -390,7 +322,6 @@ namespace EasyEditor
 			return cnt;
 		}
 
-
 		public static FieldInfo GetFieldInfo(this SerializedProperty property)
 		{
 			const BindingFlags bindings =
@@ -413,7 +344,6 @@ namespace EasyEditor
 			return true;
 		}
 
-		/// Gets the object that the property is a member of
 		public static object GetObjectWithProperty(this SerializedProperty prop)
 		{
 			string path = prop.propertyPath.Replace(".Array.data[", "[");
@@ -423,63 +353,42 @@ namespace EasyEditor
 			{
 				if (element.Contains("["))
 				{
-					string elementName = element.Substring(0, element.IndexOf("[", StringComparison.Ordinal));
-					int index = Convert.ToInt32(element.Substring(element.IndexOf("[", StringComparison.Ordinal))
+					string elementName = element[..element.IndexOf("[", StringComparison.Ordinal)];
+					int index = Convert.ToInt32(element[element.IndexOf("[", StringComparison.Ordinal)..]
 						.Replace("[", "").Replace("]", ""));
-					obj = GetValueAt(obj, elementName, index);
+					obj = GetValueAt_(obj, elementName, index);
 				}
 				else
 				{
-					obj = GetFieldValue(obj, element);
+					obj = GetValue_(obj, element);
 				}
 			}
 
 			return obj;
+		}
 
-
-
-			object GetValueAt(object source, string name, int index)
+		public static object GetObjectWithProperty(this SerializedProperty prop, out Type type)
+		{
+			string path = prop.propertyPath.Replace(".Array.data[", "[");
+			object obj = prop.serializedObject.targetObject;
+			type = obj.GetType();
+			string[] elements = path.Split('.');
+			foreach (string element in elements.Take(elements.Length - 1))
 			{
-				IEnumerable enumerable = GetFieldValue(source, name) as IEnumerable;
-				if (enumerable == null)
-					return null;
-
-				IEnumerator enm = enumerable.GetEnumerator();
-				while (index-- >= 0)
-					enm.MoveNext();
-				return enm.Current;
-			}
-
-			object GetFieldValue(object source, string name)
-			{
-				if (source == null)
-					return null;
-
-				foreach (Type type in GetHierarchyTypes(source.GetType()))
+				if (element.Contains("["))
 				{
-					FieldInfo f = type.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-					if (f != null)
-						return f.GetValue(source);
-
-					PropertyInfo p = type.GetProperty(name,
-						BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-					if (p != null)
-						return p.GetValue(source, null);
+					string elementName = element[..element.IndexOf("[", StringComparison.Ordinal)];
+					int index = Convert.ToInt32(element[element.IndexOf("[", StringComparison.Ordinal)..]
+						.Replace("[", "").Replace("]", ""));
+					obj = GetValueAt_(obj, elementName, index, out type);
 				}
-
-				return null;
-
-
-				IEnumerable<Type> GetHierarchyTypes(Type sourceType)
+				else
 				{
-					yield return sourceType;
-					while (sourceType.BaseType != null)
-					{
-						yield return sourceType.BaseType;
-						sourceType = sourceType.BaseType;
-					}
+					obj = GetValue_(obj, element, out type);
 				}
 			}
+
+			return obj;
 		}
 
 		public static string AsStringValue(this SerializedProperty property)
@@ -502,7 +411,7 @@ namespace EasyEditor
 					return property.boolValue.ToString();
 
 				case SerializedPropertyType.Enum:
-					return property.GetValue().ToString();
+					return property.GetObjectOfProperty().ToString();
 
 				default:
 					return string.Empty;
@@ -513,11 +422,131 @@ namespace EasyEditor
 			=> property.serializedObject.targetObject.GetType().GetHashCode()
 			   + property.propertyPath.GetHashCode();
 
+		// Private Methods ------------------------------------------------
+
+		static object GetValue_(object source, string memberName)
+		{
+			if (source == null)
+				return null;
+			Type type = source.GetType();
+
+
+			const BindingFlags mask = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+			while (type != null)
+			{
+				FieldInfo field = type.GetField(memberName, mask);
+				if (field != null)
+					return field.GetValue(source);
+
+				PropertyInfo p =
+					type.GetProperty(memberName, mask);
+				if (p != null)
+					return p.GetValue(source, null);
+
+				type = type.BaseType;
+			}
+
+			return null;
+		}
+		static object GetValue_(object source, string memberName, out Type typeOfResult)
+		{
+			typeOfResult = null;
+			if (source == null) return null;
+			Type sourceType = source.GetType();
+
+
+			const BindingFlags mask = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+			while (sourceType != null)
+			{
+				FieldInfo field = sourceType.GetField(memberName, mask);
+				if (field != null)
+				{
+					typeOfResult = field.FieldType;
+					return field.GetValue(source);
+				}
+
+				PropertyInfo p =
+					sourceType.GetProperty(memberName, mask);
+				if (p != null)
+				{
+					typeOfResult = p.PropertyType;
+					return p.GetValue(source, null);
+				}
+				sourceType = sourceType.BaseType;
+			}
+
+			return null;
+		}
+		static object GetValueAt_(object source, string memberName, int index)
+		{
+			if (GetValue_(source, memberName) is IList sequence)
+				return sequence[index];
+			else
+				return null;
+		}
+		static object GetValueAt_(object source, FieldInfo field, int index)
+		{
+			if (source == null) return null;
+			if (field == null) return null;
+
+			object fieldValue = field.GetValue(source);
+			if (fieldValue is IList iList)
+				return iList[index];
+
+			return null;
+		}
+		static object GetValueAt_(object source, string memberName, int index, out Type typeOfElement)
+		{
+			object fieldValue = GetValue_(source, memberName, out typeOfElement);
+			if (fieldValue is IList list)
+			{
+				if (list is Array array)
+					typeOfElement = array.GetType().GetElementType();
+				else
+					typeOfElement = list.GetType().GetGenericArguments()[0];
+
+				return list[index];
+			}
+
+			return null;
+		}
+		static bool TrySetValue_(object source, FieldInfo field, object newValue)
+		{
+			if (source == null) return false;
+			if (field == null) return false;
+
+			object oldValue = field.GetValue(source);
+			if (Equals(oldValue, newValue))
+				return false;
+
+			field.SetValue(source, newValue);
+			return true;
+		}
+		static bool TrySetValueAt_(object source, FieldInfo field, int index, object newValue)
+		{
+			if (source == null) return false;
+			if (field == null) return false;
+
+			object value = field.GetValue(source);
+			if (value is IList iList)
+			{ 
+				if (!iList[index].Equals(newValue))
+				{
+					iList[index] = newValue;
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		
+		/*
 		static bool IsSubclassOf_GenericsSupported(Type subType, Type baseType)
 		{
-			if (baseType.IsGenericType)			
+			if (baseType.IsGenericType)
 				return IsSubclassOfRawGeneric(subType, baseType);
-			
+
 			return subType.IsSubclassOf(baseType);
 		}
 
@@ -536,6 +565,9 @@ namespace EasyEditor
 
 			return false;
 		}
+		*/
+
+
 	}
 }
 #endif

@@ -55,7 +55,7 @@ namespace EasyEditor
 			return t.Split('\n');
 		}
 
-		internal static GUIContent GetHelpIcon(UnityEditor.MessageType type, bool small)
+		internal static GUIContent GetIcon(UnityEditor.MessageType type, bool small)
 		{
 			string t = string.Empty;
 
@@ -137,7 +137,7 @@ namespace EasyEditor
 			bool isFullLength = true)
 		{
 			UnityEditor.MessageType editorMessageType = ToEditorMessageType(messageType);
-			GUIContent content = GetHelpIcon(editorMessageType, position.height < 40);
+			GUIContent content = GetIcon(editorMessageType, position.height < 40);
 			content.text = message;
 
 			GUIStyle style = isBoxed

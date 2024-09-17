@@ -94,7 +94,7 @@ namespace EasyEditor
 
 			object oldValue = default;
 			if (_valueChangeCallbackAttribute != null)
-				oldValue = property.GetValue();
+				oldValue = property.GetObjectOfProperty();
 
 			if (_customPropertyDrawer != null)
 				_customPropertyDrawer.OnGUI(position, property, label);
@@ -105,7 +105,7 @@ namespace EasyEditor
 
 			if (_valueChangeCallbackAttribute != null)
 			{
-				object newValue = property.GetValue();
+				object newValue = property.GetObjectOfProperty();
 				if (!Equals(oldValue, newValue))
 					_valueChangeCallbackAttribute.CallBack(_owner, oldValue, newValue);
 			}
