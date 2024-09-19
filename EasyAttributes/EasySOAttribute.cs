@@ -8,15 +8,21 @@ using System.Reflection;
 using UnityEditor;
 #endif
 
+/// <summary>
+/// Advanced ScriptableObject Attribute
+/// </summary>
 [AttributeUsage(AttributeTargets.Field)]
-public class EasySO : PropertyAttribute 
-{
 
+public class EasySOAttribute : PropertyAttribute
+{
+	public bool nesting = true;
+	public bool autoCreate = true;
+	public bool foldout = true;
 }
 
 #if UNITY_EDITOR
 
-[CustomPropertyDrawer(typeof(EasySO))]
+[CustomPropertyDrawer(typeof(EasySOAttribute))]
 public class EasySODrawer : PropertyDrawer
 {
 
@@ -60,7 +66,12 @@ public class EasySODrawer : PropertyDrawer
 
 	public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 	{
-		static void LogTypeError(Rect position, GUIContent label, string type) => EditorGUI.LabelField(position, label.text, $"{type} is Not supported!  Use {nameof(EasySO)} Attribute only for ScriptableObjects");
+		static void LogTypeError(Rect position, GUIContent label, string type) => EditorGUI.LabelField(position, label.text, $"{type} is Not supported!  Use {nameof(EasySOAttribute)} Attribute only for ScriptableObjects");
+
+		EasySOAttribute easySOAttribute = attribute as EasySOAttribute;
+		bool nesting = easySOAttribute.nesting;
+		bool autoCreate = easySOAttribute.autoCreate;
+		bool foldout = easySOAttribute.foldout;
 
 		if (property.propertyType != SerializedPropertyType.ObjectReference)
 		{
@@ -70,7 +81,7 @@ public class EasySODrawer : PropertyDrawer
 
 		ScriptableObject subjectSO = property.GetObjectOfProperty(out Type referencedType) as ScriptableObject;
 		ScriptableObject containerSO = property.serializedObject.targetObject as ScriptableObject;
-		
+
 		if (!referencedType.IsSubclassOf(typeof(ScriptableObject)))
 		{
 			LogTypeError(position, label, referencedType.Name);
@@ -89,44 +100,56 @@ public class EasySODrawer : PropertyDrawer
 		// Foldout:
 		Rect header = position;
 		header.height = EditorGUIUtility.singleLineHeight;
-		Rect foldoutRect = header;
-		foldoutRect.width = 50;
 
-		Rect menuButtonRect = header.SliceOut(20, Side.Right);
-
+		Rect menuButtonRect = header;
+		if (nesting || autoCreate)
+			menuButtonRect = header.SliceOut(20, Side.Right);
 
 		if (isNested && !isNestedInTarget)
 		{
 			Rect warningRect = header.SliceOut(115, Side.Right);
 			EasyMessageDrawer.DrawMessage(warningRect, "Nested elsewhere!", EasyEditor.MessageType.Warning);
-		}	
+		}
 
-		if(subjectSO!= null)
-			property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, GUIContent.none, true);
+		if (foldout)
+		{
+			Rect foldoutRect = header;
+			foldoutRect.width = 50;
+			if (subjectSO != null)
+				property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, GUIContent.none, true);
+		}
+		else
+			property.isExpanded = false;
 
 		EditorGUI.BeginProperty(header, label, property);
 		EditorGUI.indentLevel++;
 		EditorGUI.PropertyField(header, property, label, true);
 		EditorGUI.indentLevel--;
-		  
+
 		if (containerSO == null) return;
 
-		if (GUI.Button(menuButtonRect, "..."))
+		if ((nesting || autoCreate) && GUI.Button(menuButtonRect, "..."))
 		{
 			GenericMenu menu = new();
-			AddCreateItemOptions(menu, referencedType, property);
+			if (autoCreate)
+			{
+				AddCreateItemOptions(menu, referencedType, property);
 
-			if (menu.GetItemCount() > 0)
-				menu.AddSeparator("");
+				if (menu.GetItemCount() > 0 && nesting)
+					menu.AddSeparator("");
+			}
 
-			if (subjectSO != null && !isNestedInTarget && !isNested)
-				menu.AddItem(new GUIContent("Nest"), false, () => Nest(subjectSO, containerSO));
+			if (nesting)
+			{
+				if (subjectSO != null && !isNestedInTarget && !isNested)
+					menu.AddItem(new GUIContent("Nest"), false, () => Nest(subjectSO, containerSO));
 
-			if (subjectSO != null && isNestedInTarget)
-				menu.AddItem(new GUIContent("Un-Nest"), false, () => UnNest(subjectSO, containerSO));
+				if (subjectSO != null && isNestedInTarget)
+					menu.AddItem(new GUIContent("Un-Nest"), false, () => UnNest(subjectSO, containerSO));
 
-			if (subjectSO != null && isNestedInTarget)
-				menu.AddItem(new GUIContent("Delete"), false, () => Delete(property));
+				if (subjectSO != null && isNestedInTarget)
+					menu.AddItem(new GUIContent("Delete"), false, () => Delete(property));
+			}
 
 			menu.ShowAsContext();
 		}
@@ -235,7 +258,7 @@ public class EasySODrawer : PropertyDrawer
 	void Nest(ScriptableObject subject, ScriptableObject container)
 	{
 		string subjectPath = AssetDatabase.GetAssetPath(subject);
-		AssetDatabase.RemoveObjectFromAsset(subject); 
+		AssetDatabase.RemoveObjectFromAsset(subject);
 		AssetDatabase.AddObjectToAsset(subject, container);
 		AssetDatabase.DeleteAsset(subjectPath);
 		AssetDatabase.SaveAssets();
@@ -244,7 +267,7 @@ public class EasySODrawer : PropertyDrawer
 	}
 
 	void UnNest(ScriptableObject subject, ScriptableObject container)
-	{ 
+	{
 		AssetDatabase.RemoveObjectFromAsset(subject);
 
 		string path = AssetDatabase.GetAssetPath(container);
@@ -254,7 +277,7 @@ public class EasySODrawer : PropertyDrawer
 		AssetDatabase.CreateAsset(subject, fullPath);
 
 		AssetDatabase.SaveAssets();
-		AssetDatabase.Refresh(); 
+		AssetDatabase.Refresh();
 	}
 
 	void Delete(SerializedProperty property)
