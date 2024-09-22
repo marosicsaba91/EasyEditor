@@ -4,6 +4,7 @@ using EasyEditor;
 using System.Collections.Generic;
 using System.Reflection;
 
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -17,7 +18,7 @@ public class EasySOAttribute : PropertyAttribute
 {
 	public bool nesting = true;
 	public bool autoCreate = true;
-	public bool foldout = true;
+	public bool inline = true;
 }
 
 #if UNITY_EDITOR
@@ -25,6 +26,12 @@ public class EasySOAttribute : PropertyAttribute
 [CustomPropertyDrawer(typeof(EasySOAttribute))]
 public class EasySODrawer : PropertyDrawer
 {
+	public enum VerticalDirection
+	{
+		Down = -1,
+		Up = 1
+	}
+
 
 	static readonly Dictionary<Type, List<Type>> typeToSubType = new();
 
@@ -71,7 +78,7 @@ public class EasySODrawer : PropertyDrawer
 		EasySOAttribute easySOAttribute = attribute as EasySOAttribute;
 		bool nesting = easySOAttribute.nesting;
 		bool autoCreate = easySOAttribute.autoCreate;
-		bool foldout = easySOAttribute.foldout;
+		bool inline = easySOAttribute.inline;
 
 		if (property.propertyType != SerializedPropertyType.ObjectReference)
 		{
@@ -87,7 +94,6 @@ public class EasySODrawer : PropertyDrawer
 			LogTypeError(position, label, referencedType.Name);
 			return;
 		}
-
 
 		string subjectPath = AssetDatabase.GetAssetPath(subjectSO);
 		string targetPath = AssetDatabase.GetAssetPath(containerSO);
@@ -111,19 +117,20 @@ public class EasySODrawer : PropertyDrawer
 			EasyMessageDrawer.DrawMessage(warningRect, "Nested elsewhere!", EasyEditor.MessageType.Warning);
 		}
 
-		if (foldout)
+		if (inline)
 		{
 			Rect foldoutRect = header;
-			foldoutRect.width = 50;
+			foldoutRect.width = EditorHelper.LabelWidth;
 			if (subjectSO != null)
 				property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, GUIContent.none, true);
 		}
 		else
 			property.isExpanded = false;
 
-		EditorGUI.BeginProperty(header, label, property);
 		EditorGUI.indentLevel++;
-		EditorGUI.PropertyField(header, property, label, true);
+		EditorGUI.BeginProperty(header, label, property);
+		EditorGUI.PropertyField(header, property, label, includeChildren: true);
+		EditorGUI.EndProperty();
 		EditorGUI.indentLevel--;
 
 		if (containerSO == null) return;
@@ -155,33 +162,137 @@ public class EasySODrawer : PropertyDrawer
 		}
 
 		if (property.isExpanded && property.objectReferenceValue != null)
-		{
-			EditorGUI.indentLevel++;
-
-			if (isNestedInTarget)
-			{
-				string name = subjectSO.name;
-				string newName = EditorGUILayout.TextField("Name", name);
-				if (name != newName)
-				{
-					subjectSO.name = newName;
-					EditorUtility.SetDirty(subjectSO);
-					EditorUtility.SetDirty(containerSO);
-				}
-			}
-			SerializedObject obj = new(property.objectReferenceValue);
-			SerializedProperty prop = obj.GetIterator();
-			prop.NextVisible(true);
-			while (prop.NextVisible(false))
-			{
-				EditorGUILayout.PropertyField(prop, true);
-			}
-			obj.ApplyModifiedProperties();
-			EditorGUI.indentLevel--;
-		}
+			DrawInline(property, subjectSO, containerSO, isNestedInTarget);
 
 		position.y += EditorGUIUtility.standardVerticalSpacing;
+	}
+
+	void DrawInline(SerializedProperty property, ScriptableObject subjectSO, ScriptableObject containerSO, bool isNestedInTarget)
+	{
+		EditorGUI.indentLevel++;
+
+		if (isNestedInTarget)
+		{
+			string name = subjectSO.name;
+			string newName = EditorGUILayout.TextField("Name", name);
+			if (name != newName)
+			{
+				subjectSO.name = newName;
+				EditorUtility.SetDirty(subjectSO);
+				EditorUtility.SetDirty(containerSO);
+			}
+		}
+		SerializedObject obj = new(property.objectReferenceValue);
+		SerializedProperty iteratedProperty = obj.GetIterator();
+
+		iteratedProperty.NextVisible(enterChildren: true);
+		while (iteratedProperty.NextVisible(enterChildren: false))
+		{
+			if (iteratedProperty.isArray)
+				DrawArray(iteratedProperty);
+			else
+				EditorGUILayout.PropertyField(iteratedProperty, includeChildren: true);
+		}
+		obj.ApplyModifiedProperties();
+		EditorGUI.indentLevel--;
+	}
+
+
+	private static void DrawArray(SerializedProperty property)
+	{
+		Rect headerRect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
+		Rect counterRect = headerRect.SliceOut(70, Side.Right);
+
+		SerializedProperty arrayProperty = property.Copy();
+		int arraySize = property.arraySize;
+
+		// Foldout
+		bool isExpanded = EditorGUI.Foldout(headerRect, property.isExpanded, GUIContent.none, true);
+		property.isExpanded = isExpanded;
+
+		// Name of the array
+
+		EditorGUI.indentLevel++;
+		FontStyle originalFontStyle = EditorStyles.label.fontStyle;
+		EditorStyles.label.fontStyle = FontStyle.Bold;
+		EditorGUI.BeginProperty(headerRect, GUIContent.none, property);
+		EditorGUI.PropertyField(headerRect, property, includeChildren: false);
 		EditorGUI.EndProperty();
+		EditorStyles.label.fontStyle = originalFontStyle;
+
+
+		// Count field 
+		property.NextVisible(enterChildren: true);
+
+		float originalLabelWidth = EditorGUIUtility.labelWidth;
+		int originalIndent = EditorGUI.indentLevel;
+		EditorGUIUtility.labelWidth = 30 - EditorGUIUtility.standardVerticalSpacing;
+		EditorGUI.indentLevel = 0;
+
+		EditorGUI.BeginProperty(counterRect, GUIContent.none, property);
+		EditorGUI.PropertyField(counterRect, property, includeChildren: false);
+		EditorGUI.EndProperty();
+
+		EditorGUIUtility.labelWidth = originalLabelWidth;
+		EditorGUI.indentLevel = originalIndent;
+
+		// Draw the array elements
+		if (!isExpanded)
+		{
+			for (int i = 0; i < arraySize; i++)
+				if (!property.NextVisible(enterChildren: false)) break;
+		}
+		else
+		{
+			for (int i = 0; i < arraySize; i++)
+			{
+				bool isNext = property.NextVisible(enterChildren: false);
+				if (!isNext) break;
+
+				float height = EditorGUI.GetPropertyHeight(property, includeChildren: true);
+				Rect itemRect = EditorGUILayout.GetControlRect(false, height);
+				Rect menuRect = itemRect.SliceOut(40, Side.Right);
+				menuRect.height = EditorGUIUtility.singleLineHeight;
+				EditorGUI.BeginProperty(itemRect, GUIContent.none, property);
+				EditorGUI.PropertyField(itemRect, property, includeChildren: false);
+				EditorGUI.EndProperty();
+
+				if (GUI.Button(menuRect, new GUIContent($"{i}/{arraySize}", $"Actions on Element: {i}")))
+				{
+					int index = i;
+					GenericMenu menu = new();
+					menu.AddItem(new GUIContent("Delete"), false, () => Delete(arrayProperty, index));
+					menu.AddItem(new GUIContent("Up"), false, () => Move(arrayProperty, index, VerticalDirection.Up));
+					menu.AddItem(new GUIContent("Down"), false, () => Move(arrayProperty, index, VerticalDirection.Down));
+					menu.AddItem(new GUIContent("Insert Over"), false, () => Insert(arrayProperty, index, VerticalDirection.Up));
+					menu.AddItem(new GUIContent("Insert Under"), false, () => Insert(arrayProperty, index, VerticalDirection.Down));
+					menu.ShowAsContext();
+				}
+			}
+		}
+		EditorGUI.indentLevel--;
+	}
+
+	static void Delete(SerializedProperty arrayProperty, int index)
+	{
+		arrayProperty.DeleteArrayElementAtIndex(index);
+		arrayProperty.serializedObject.ApplyModifiedProperties();
+	}
+	static void Move(SerializedProperty arrayProperty, int index, VerticalDirection direction)
+	{
+		int newIndex = index - (int)direction;
+		if (newIndex < 0 || newIndex >= arrayProperty.arraySize) return;
+
+		arrayProperty.MoveArrayElement(index, newIndex);
+		arrayProperty.serializedObject.ApplyModifiedProperties();
+	}
+	static void Insert(SerializedProperty arrayProperty, int index, VerticalDirection direction)
+	{
+		if (direction == VerticalDirection.Down)
+			index++;
+
+		arrayProperty.InsertArrayElementAtIndex(index);
+		arrayProperty.serializedObject.ApplyModifiedProperties();
 	}
 
 
