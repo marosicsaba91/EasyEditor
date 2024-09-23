@@ -37,7 +37,6 @@ namespace EasyEditor
 		InVisible,
 		Space3D,
 
-		Add,
 		Plus,
 		Minus,
 
@@ -47,6 +46,7 @@ namespace EasyEditor
 		Star,
 		Label,
 		Camera,
+		Video,
 
 		Tool,
 		Move,
@@ -110,7 +110,6 @@ namespace EasyEditor
 			if (allTextures.Count != 0) return;
 
 			allTextures.Clear();
-			List<string> workingTextures = new();
 
 			foreach (string searchName in allNames)
 			{
@@ -120,11 +119,8 @@ namespace EasyEditor
 				if (guiContent.image != null)
 				{
 					allTextures.Add(searchName, guiContent.image);
-					workingTextures.Add(searchName);
 				}
 			}
-
-			Debug.Log($"Working Textures: {workingTextures.Count} / {allNames.Length}");
 		}
 
 		internal static void ProcessNiceIcons()
@@ -203,7 +199,6 @@ namespace EasyEditor
 			{ IconType.InVisible,			new string[]{ "animationvisibilitytoggleoff", "animationvisibilitytoggleoff@2x" }},
 			{ IconType.Space3D,				new string[]{ "AvatarPivot", "AvatarPivot@2x" }},
 
-			{ IconType.Add,					new string[]{ "CreateAddNew", "CreateAddNew@2x" }},
 			{ IconType.Plus,				new string[]{ "Toolbar Plus", "Toolbar Plus@2x" }},
 			{ IconType.Minus,				new string[]{ "Toolbar Minus", "Toolbar Minus@2x" }},
 
@@ -212,7 +207,8 @@ namespace EasyEditor
 			{ IconType.Star,				new string[]{ "Favorite", "Favorite@2x" /*, "Favorite Icon"*/ }},
 			{ IconType.Label,				new string[]{ "FilterByLabel","FilterByLabel@2x" }},
 
-			{ IconType.Camera,				new string[]{ "FrameCapture","FrameCapture@2x" }},
+			{ IconType.Camera,              new string[]{ "FrameCapture","FrameCapture@2x" }},
+			{ IconType.Video,               new string[]{ "Profiler.Video", "Profiler.Video@2x" }},
 			{ IconType.Tool,				new string[]{ "CustomTool","CustomTool@2x" }},
 			{ IconType.Move,				new string[]{ "MoveTool","MoveTool@2x" }},
 			{ IconType.Cursor,				new string[]{ "Grid.Default","Grid.Default@2x" }},
