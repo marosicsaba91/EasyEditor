@@ -71,6 +71,13 @@ public class EasySODrawer : PropertyDrawer
 		}
 	}
 
+	static GUIContent normalSOMenuButtonContent;
+	static GUIContent nestedSOMenuButtonContent;
+	static GUIContent warningSOMenuButtonContent;
+	static GUIStyle centerStyle;
+	static GUIStyle leftStyle;
+	static GUIStyle rightStyle;
+
 	public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 	{
 		static void LogTypeError(Rect position, GUIContent label, string type) => EditorGUI.LabelField(position, label.text, $"{type} is Not supported!  Use {nameof(EasySOAttribute)} Attribute only for ScriptableObjects");
@@ -109,13 +116,10 @@ public class EasySODrawer : PropertyDrawer
 
 		Rect menuButtonRect = header;
 		if (nesting || autoCreate)
-			menuButtonRect = header.SliceOut(20, Side.Right);
-
-		if (isNested && !isNestedInTarget)
 		{
-			Rect warningRect = header.SliceOut(115, Side.Right);
-			EasyMessageDrawer.DrawMessage(warningRect, "Nested elsewhere!", EasyEditor.MessageType.Warning);
+			menuButtonRect = header.SliceOut(24, Side.Right);
 		}
+
 
 		if (inline)
 		{
@@ -135,30 +139,65 @@ public class EasySODrawer : PropertyDrawer
 
 		if (containerSO == null) return;
 
-		if ((nesting || autoCreate) && GUI.Button(menuButtonRect, "..."))
+
+		if (nesting || autoCreate)  // If draw Menu button
 		{
-			GenericMenu menu = new();
-			if (autoCreate)
+			if (normalSOMenuButtonContent == null)
 			{
-				AddCreateItemOptions(menu, referencedType, property);
+				normalSOMenuButtonContent = new(EditorHelper.GetIcon(IconType.ScriptableObject, IconSize.Small), "ScriptableObject Menu");
+				nestedSOMenuButtonContent = new(EditorHelper.GetIcon(IconType.ScriptableObject, IconSize.Small), "ScriptableObject Nested in this asset");
+				warningSOMenuButtonContent = new(EditorHelper.GetIcon(IconType.Warning, IconSize.Small), "ScriptableObject Nested in another Asset File");
 
-				if (menu.GetItemCount() > 0 && nesting)
-					menu.AddSeparator("");
+				centerStyle = new() { alignment = TextAnchor.MiddleCenter, fontSize = 10 };
+				leftStyle = new() { alignment = TextAnchor.UpperLeft, fontSize = 9 };
+				rightStyle = new() { alignment = TextAnchor.MiddleRight, fontSize = 10 };
+
+				// Color = Default Label Color
+				leftStyle.normal.textColor = EditorStyles.label.normal.textColor;
 			}
 
-			if (nesting)
+			GUIContent menuButtonContent =
+				(isNested && !isNestedInTarget) ? warningSOMenuButtonContent :
+				isNestedInTarget ? nestedSOMenuButtonContent :
+				normalSOMenuButtonContent;
+
+			bool onClick = GUI.Button(menuButtonRect, GUIContent.none);
+
+			float h = menuButtonRect.height - 16;
+			menuButtonRect.y += h / 2;
+			menuButtonRect.height -= h;
+			menuButtonRect.x += 1;
+			menuButtonRect.width -= 2;
+
+			GUI.Label(menuButtonRect, menuButtonContent, (isNested && isNestedInTarget) ? rightStyle: centerStyle);
+			if(isNested && isNestedInTarget)
+				GUI.Label(menuButtonRect, "N", leftStyle);
+
+			if (onClick)
 			{
-				if (subjectSO != null && !isNestedInTarget && !isNested)
-					menu.AddItem(new GUIContent("Nest"), false, () => Nest(subjectSO, containerSO));
+				GenericMenu menu = new();
+				if (autoCreate)
+				{
+					AddCreateItemOptions(menu, referencedType, property);
 
-				if (subjectSO != null && isNestedInTarget)
-					menu.AddItem(new GUIContent("Un-Nest"), false, () => UnNest(subjectSO, containerSO));
+					if (menu.GetItemCount() > 0 && nesting)
+						menu.AddSeparator("");
+				}
 
-				if (subjectSO != null && isNestedInTarget)
-					menu.AddItem(new GUIContent("Delete"), false, () => Delete(property));
+				if (nesting)
+				{
+					if (subjectSO != null && !isNestedInTarget && !isNested)
+						menu.AddItem(new GUIContent("Nest"), false, () => Nest(subjectSO, containerSO));
+
+					if (subjectSO != null && isNestedInTarget)
+						menu.AddItem(new GUIContent("Un-Nest"), false, () => UnNest(subjectSO, containerSO));
+
+					if (subjectSO != null && isNestedInTarget)
+						menu.AddItem(new GUIContent("Delete"), false, () => Delete(property));
+				}
+
+				menu.ShowAsContext();
 			}
-
-			menu.ShowAsContext();
 		}
 
 		if (property.isExpanded && property.objectReferenceValue != null)
@@ -201,7 +240,7 @@ public class EasySODrawer : PropertyDrawer
 	private static void DrawArray(SerializedProperty property)
 	{
 		Rect headerRect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
-		Rect counterRect = headerRect.SliceOut(70, Side.Right);
+		Rect counterRect = headerRect.SliceOut(80, Side.Right);
 
 		SerializedProperty arrayProperty = property.Copy();
 		int arraySize = property.arraySize;
@@ -213,12 +252,12 @@ public class EasySODrawer : PropertyDrawer
 		// Name of the array
 
 		EditorGUI.indentLevel++;
-		FontStyle originalFontStyle = EditorStyles.label.fontStyle;
-		EditorStyles.label.fontStyle = FontStyle.Bold;
+		//FontStyle originalFontStyle = EditorStyles.label.fontStyle;
+		//EditorStyles.label.fontStyle = FontStyle.Bold;
 		EditorGUI.BeginProperty(headerRect, GUIContent.none, property);
 		EditorGUI.PropertyField(headerRect, property, includeChildren: false);
 		EditorGUI.EndProperty();
-		EditorStyles.label.fontStyle = originalFontStyle;
+		//EditorStyles.label.fontStyle = originalFontStyle;
 
 
 		// Count field 
@@ -233,6 +272,8 @@ public class EasySODrawer : PropertyDrawer
 		EditorGUI.PropertyField(counterRect, property, includeChildren: false);
 		EditorGUI.EndProperty();
 
+		arraySize = arrayProperty.arraySize;
+
 		EditorGUIUtility.labelWidth = originalLabelWidth;
 		EditorGUI.indentLevel = originalIndent;
 
@@ -244,26 +285,31 @@ public class EasySODrawer : PropertyDrawer
 		}
 		else
 		{
-			for (int i = 0; i < arraySize; i++)
+			for (int i = 0; i < arrayProperty.arraySize; i++)
 			{
 				bool isNext = property.NextVisible(enterChildren: false);
 				if (!isNext) break;
 
 				float height = EditorGUI.GetPropertyHeight(property, includeChildren: true);
 				Rect itemRect = EditorGUILayout.GetControlRect(false, height);
-				Rect menuRect = itemRect.SliceOut(40, Side.Right);
+				Rect menuRect = itemRect.SliceOut(50, Side.Right);
 				menuRect.height = EditorGUIUtility.singleLineHeight;
 				EditorGUI.BeginProperty(itemRect, GUIContent.none, property);
-				EditorGUI.PropertyField(itemRect, property, includeChildren: false);
+				try
+				{
+					EditorGUI.PropertyField(itemRect, property, includeChildren: false);
+				}
+				catch (IndexOutOfRangeException) { }
 				EditorGUI.EndProperty();
 
 				if (GUI.Button(menuRect, new GUIContent($"{i}/{arraySize}", $"Actions on Element: {i}")))
 				{
 					int index = i;
 					GenericMenu menu = new();
-					menu.AddItem(new GUIContent("Delete"), false, () => Delete(arrayProperty, index));
-					menu.AddItem(new GUIContent("Up"), false, () => Move(arrayProperty, index, VerticalDirection.Up));
-					menu.AddItem(new GUIContent("Down"), false, () => Move(arrayProperty, index, VerticalDirection.Down));
+
+					menu.AddItem(new GUIContent("Remove"), false, () => Delete(arrayProperty, index));
+					menu.AddItem(new GUIContent("Move Up"), false, () => Move(arrayProperty, index, VerticalDirection.Up));
+					menu.AddItem(new GUIContent("Move Down"), false, () => Move(arrayProperty, index, VerticalDirection.Down));
 					menu.AddItem(new GUIContent("Insert Over"), false, () => Insert(arrayProperty, index, VerticalDirection.Up));
 					menu.AddItem(new GUIContent("Insert Under"), false, () => Insert(arrayProperty, index, VerticalDirection.Down));
 					menu.ShowAsContext();

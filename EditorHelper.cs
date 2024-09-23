@@ -6,7 +6,7 @@ using Object = UnityEngine.Object;
 
 namespace EasyEditor
 {
-	public static class EditorHelper
+	public static partial class EditorHelper
 	{
 		static readonly float tableMarginBrightness = EditorGUIUtility.isProSkin ? 0.2f : 0.9f;
 		public static readonly Color tableMarginColor =
@@ -271,9 +271,10 @@ namespace EasyEditor
 
 			return null;
 		}
-		 
+
 		public static float GetStandardPanelHeight(int standardLineCount) =>
 			standardLineCount * EditorGUIUtility.singleLineHeight + (standardLineCount - 1) * EditorGUIUtility.standardVerticalSpacing;
 	}
+
 }
 #endif

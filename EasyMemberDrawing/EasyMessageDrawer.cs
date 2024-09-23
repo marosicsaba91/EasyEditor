@@ -13,7 +13,7 @@ namespace EasyEditor
 		EasyMessage _message;
 		Func<object, object> _textGetter;
 		string[] _lines;
-		bool _initialised = false;
+		bool _isInitialized = false;
 		object _owner;
 
 
@@ -21,10 +21,10 @@ namespace EasyEditor
 		{
 			_owner = property.GetObjectWithProperty();
 			_message = (EasyMessage)property.GetObjectOfProperty();
-			if (!_initialised)
+			if (!_isInitialized)
 			{
 				InspectorDrawingUtility.TryGetAGetterFromMember(_owner.GetType(), _message.TextValue, out _textGetter);
-				_initialised = true;
+				_isInitialized = true;
 			}
 
 			_lines = GetLines(_owner, _message.TextValue);
@@ -54,37 +54,6 @@ namespace EasyEditor
 
 			return t.Split('\n');
 		}
-
-		internal static GUIContent GetIcon(UnityEditor.MessageType type, bool small)
-		{
-			string t = string.Empty;
-
-			switch (type)
-			{
-				case UnityEditor.MessageType.Info:
-					t += "console.infoicon";
-					break;
-				case UnityEditor.MessageType.Warning:
-					t += "console.warnicon";
-					break;
-				case UnityEditor.MessageType.Error:
-					t += "console.erroricon";
-					break;
-				default:
-					return new GUIContent();
-			}
-
-			t += small ? ".sml" : string.Empty;
-			return EditorGUIUtility.IconContent(t);
-		}
-
-		static UnityEditor.MessageType ToEditorMessageType(MessageType messageType) => messageType switch
-		{
-			MessageType.Info => UnityEditor.MessageType.Info,
-			MessageType.Warning => UnityEditor.MessageType.Warning,
-			MessageType.Error => UnityEditor.MessageType.Error,
-			_ => UnityEditor.MessageType.None,
-		};
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
@@ -136,9 +105,13 @@ namespace EasyEditor
 			bool isBoxed = true,
 			bool isFullLength = true)
 		{
-			UnityEditor.MessageType editorMessageType = ToEditorMessageType(messageType);
-			GUIContent content = GetIcon(editorMessageType, position.height < 40);
-			content.text = message;
+			IconType editorMessageType = ToEditorMessageType(messageType);
+			IconSize size = position.height < 40 ? IconSize.Small : IconSize.Big;
+			Texture icon = EditorHelper.GetIcon(editorMessageType, size);
+			GUIContent content = new(icon)
+			{
+				text = message
+			};
 
 			GUIStyle style = isBoxed
 				? new GUIStyle(EditorStyles.helpBox) { fontSize = fontSize }
@@ -147,7 +120,13 @@ namespace EasyEditor
 			Rect contentPosition = isFullLength ? position : EditorHelper.ContentRect(position);
 			GUI.Label(contentPosition, content, style);
 		}
-		
+		static IconType ToEditorMessageType(MessageType messageType) => messageType switch
+		{
+			MessageType.Info => IconType.Info,
+			MessageType.Warning => IconType.Warning,
+			MessageType.Error => IconType.Error,
+			_ => IconType.None
+		};
 	}
 }
 #endif
