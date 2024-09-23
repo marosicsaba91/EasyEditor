@@ -19,6 +19,11 @@ namespace EasyEditor
 		WarningInactive,
 		ErrorInactive,
 
+		Right,
+		Left,
+		Up, 
+		Down,
+
 		Help,
 		Menu,
 		Settings,
@@ -98,16 +103,38 @@ namespace EasyEditor
 
 	public static partial class EditorHelper
 	{
-		public static readonly Dictionary<IconType, Dictionary<IconSize, Texture>> iconTextures = new();
-
+		public static readonly Dictionary<IconType, Dictionary<IconSize, Texture>> niceTextures = new();
+		public static readonly Dictionary<string, Texture> allTextures = new();
 		internal static void ProcessAllIcons()
 		{
-			if (iconTextures.Count == Enum.GetValues(typeof(IconType)).Length ) return;
+			if (allTextures.Count != 0) return;
 
-			iconTextures.Clear();
+			allTextures.Clear();
+			List<string> workingTextures = new();
+
+			foreach (string searchName in allNames)
+			{
+				if (searchName.StartsWith("d_")) continue;
+
+				GUIContent guiContent = EditorGUIUtility.IconContent(searchName);
+				if (guiContent.image != null)
+				{
+					allTextures.Add(searchName, guiContent.image);
+					workingTextures.Add(searchName);
+				}
+			}
+
+			Debug.Log($"Working Textures: {workingTextures.Count} / {allNames.Length}");
+		}
+
+		internal static void ProcessNiceIcons()
+		{
+			if (niceTextures.Count == Enum.GetValues(typeof(IconType)).Length ) return;
+
+			niceTextures.Clear();
 
 			foreach ((IconType iconType, string[] strings) in searchNames)
-				iconTextures.Add(iconType, ProcessVariants(iconType, strings));
+				niceTextures.Add(iconType, ProcessVariants(iconType, strings));
 		}
 
 		static Dictionary<IconSize, Texture> ProcessVariants(IconType iconType, string[] strings)
@@ -135,10 +162,10 @@ namespace EasyEditor
 
 		public static Texture GetIcon(IconType iconType, IconSize size = IconSize.Small)
 		{
-			if (!iconTextures.TryGetValue(iconType, out Dictionary<IconSize, Texture> variants))
+			if (!niceTextures.TryGetValue(iconType, out Dictionary<IconSize, Texture> variants))
 			{ 
 				variants = ProcessVariants(iconType, searchNames[iconType]);
-				iconTextures.Add(iconType, variants);
+				niceTextures.Add(iconType, variants);
 			}
 
 			if (variants.TryGetValue(size, out Texture icon))
@@ -157,6 +184,11 @@ namespace EasyEditor
 			{ IconType.InfoInactive,		new string[]{ "console.infoicon.inactive.sml", "console.infoicon.inactive.sml@2x" }},
 			{ IconType.WarningInactive,		new string[]{ "console.warnicon.inactive.sml", "console.warnicon.inactive.sml@2x" }},
 			{ IconType.ErrorInactive,		new string[]{ "console.erroricon.inactive.sml", "console.erroricon.inactive.sml@2x" }},
+
+			{ IconType.Right,               new string[]{ "scrollright_uielements" }},
+			{ IconType.Left,                new string[]{ "scrollleft_uielements" }},
+			{ IconType.Up,                  new string[]{ "scrollup_uielements" }},
+			{ IconType.Down,                new string[]{ "scrolldown_uielements" }},
 
 			{ IconType.Help,				new string[]{ "_Help", "_Help@2x" }},
 			{ IconType.Menu,				new string[]{ "_Menu", "_Menu@2x" }},
@@ -2310,6 +2342,10 @@ namespace EasyEditor
 		"winbtn_win_rest",
 		"winbtn_win_rest_a",
 		"winbtn_win_rest_h",
+		"scrolldown_uielements",
+		"scrollup_uielements",
+		"scrollright_uielements",
+		"scrollleft_uielements"
 	};
 	}
 }

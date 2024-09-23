@@ -250,15 +250,10 @@ public class EasySODrawer : PropertyDrawer
 		property.isExpanded = isExpanded;
 
 		// Name of the array
-
 		EditorGUI.indentLevel++;
-		//FontStyle originalFontStyle = EditorStyles.label.fontStyle;
-		//EditorStyles.label.fontStyle = FontStyle.Bold;
 		EditorGUI.BeginProperty(headerRect, GUIContent.none, property);
 		EditorGUI.PropertyField(headerRect, property, includeChildren: false);
 		EditorGUI.EndProperty();
-		//EditorStyles.label.fontStyle = originalFontStyle;
-
 
 		// Count field 
 		property.NextVisible(enterChildren: true);
