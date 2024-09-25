@@ -204,14 +204,13 @@ namespace EasyEditor
 			}
 
 			if (property.isExpanded && property.objectReferenceValue != null)
-				DrawInline(property, subjectSO, containerSO, isNestedInTarget);
+				DrawInlineWithTitle(property, subjectSO, containerSO, isNestedInTarget);
 
 			position.y += EditorGUIUtility.standardVerticalSpacing;
 		}
 
-		void DrawInline(SerializedProperty property, ScriptableObject subjectSO, ScriptableObject containerSO, bool isNestedInTarget)
+		void DrawInlineWithTitle(SerializedProperty property, ScriptableObject subjectSO, ScriptableObject containerSO, bool isNestedInTarget)
 		{
-			EditorGUI.indentLevel++;
 
 			if (isNestedInTarget)
 			{
@@ -227,18 +226,28 @@ namespace EasyEditor
 			SerializedObject obj = new(property.objectReferenceValue);
 			SerializedProperty iteratedProperty = obj.GetIterator();
 
+			DrawInline(iteratedProperty);
+		}
+
+		public static void DrawInline
+			(ScriptableObject scriptableObject) =>
+			DrawInline(new SerializedObject(scriptableObject).GetIterator());
+
+
+		public static void DrawInline(SerializedProperty iteratedProperty)
+		{
+			EditorGUI.indentLevel++;
 			iteratedProperty.NextVisible(enterChildren: true);
 			while (iteratedProperty.NextVisible(enterChildren: false))
 			{
-				if (iteratedProperty.isArray)
+				if (iteratedProperty.isArray && iteratedProperty.propertyType != SerializedPropertyType.String)
 					DrawArray(iteratedProperty);
 				else
 					EditorGUILayout.PropertyField(iteratedProperty, includeChildren: true);
 			}
-			obj.ApplyModifiedProperties();
+			iteratedProperty.serializedObject. ApplyModifiedProperties();
 			EditorGUI.indentLevel--;
 		}
-
 
 		private static void DrawArray(SerializedProperty property)
 		{
