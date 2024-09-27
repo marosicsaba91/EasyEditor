@@ -89,7 +89,7 @@ namespace EasyEditor
 		Texture,
 
 		Search,
-		Cross,
+		X,
 
 		Unity,
 
@@ -250,7 +250,7 @@ namespace EasyEditor
 			{ IconType.Texture,				new string[]{ "Texture Icon" }},
 
 			{ IconType.Search,				new string[]{ "Search Icon" }},
-			{ IconType.Cross,				new string[]{ "CrossIcon" }},
+			{ IconType.X,				new string[]{ "CrossIcon" }},
 
 			{ IconType.Unity,				new string[]{ "UnityLogo" }},
 		};
