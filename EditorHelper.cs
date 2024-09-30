@@ -1,5 +1,7 @@
 ﻿#if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -274,6 +276,69 @@ namespace EasyEditor
 
 		public static float GetStandardPanelHeight(int standardLineCount) =>
 			standardLineCount * EditorGUIUtility.singleLineHeight + (standardLineCount - 1) * EditorGUIUtility.standardVerticalSpacing;
+
+		public static T DrawEnumToggle<T>(T enumValue, Func<T, bool> isEnabled = null) where T : System.Enum => DrawEnumToggle(null as GUIContent, enumValue, isEnabled);
+		public static T DrawEnumToggle<T>(string label, T enumValue, Func<T, bool> isEnabled = null) where T : System.Enum => DrawEnumToggle(new GUIContent(label), enumValue, isEnabled);
+
+		public static T DrawEnumToggle<T>(GUIContent label, T enumValue, Func<T, bool> isEnabled = null) where T : System.Enum
+		{
+			List<T> enumValues = System.Enum.GetValues(typeof(T)).Cast<T>().ToList();
+			EditorGUILayout.BeginHorizontal();
+
+			if (label != null && label != GUIContent.none)
+				EditorGUILayout.LabelField(label);
+
+			for (int i = 0; i < enumValues.Count; i++)
+			{
+				if (isEnabled != null && !isEnabled(enumValues[i]))
+					GUI.enabled = false;
+
+				T value = enumValues[i];
+				bool isSelected = value.Equals(enumValue);
+
+				GUIStyle style = isSelected ? EditorStyles.miniButtonMid : EditorStyles.miniButton;
+				if (GUILayout.Toggle(isSelected, value.ToString(), style))
+					enumValue = value;
+
+				GUI.enabled = true;
+			}
+			EditorGUILayout.EndHorizontal();
+
+			return enumValue;
+		}
+
+
+		public static T DrawEnumToggle<T>(Rect position, T enumValue, Func<T, bool> isEnabled = null) where T : System.Enum => DrawEnumToggle(position, null as GUIContent, enumValue, isEnabled);
+		public static T DrawEnumToggle<T>(Rect position, string label, T enumValue, Func<T, bool> isEnabled = null) where T : System.Enum => DrawEnumToggle(position, new GUIContent(label), enumValue, isEnabled);
+
+		public static T DrawEnumToggle<T>(Rect position, GUIContent label, T enumValue, Func<T, bool> isEnabled = null) where T : System.Enum
+		{
+			List<T> enumValues = System.Enum.GetValues(typeof(T)).Cast<T>().ToList();
+
+			Rect labelRect = position.SliceOut(LabelWidth, Side.Left, false);
+			if (label != null && label != GUIContent.none)
+				EditorGUI.LabelField(labelRect, label);
+
+			float buttonWidth = (position.width - ((enumValues.Count - 1) * EditorGUIUtility.standardVerticalSpacing)) / enumValues.Count;
+
+			for (int i = 0; i < enumValues.Count; i++)
+			{
+				if (isEnabled != null && !isEnabled(enumValues[i]))
+					GUI.enabled = false;
+
+				T value = enumValues[i];
+				bool isSelected = value.Equals(enumValue);
+
+				GUIStyle style = isSelected ? EditorStyles.miniButtonMid : EditorStyles.miniButton;
+				Rect buttonRect = position.SliceOut(buttonWidth, Side.Left);
+				if (GUI.Toggle(buttonRect, isSelected, value.ToString(), style))
+					enumValue = value;
+
+				GUI.enabled = true;
+			}
+
+			return enumValue;
+		}
 	}
 
 }
