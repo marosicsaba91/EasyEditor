@@ -15,6 +15,8 @@ namespace EasyEditor
 		const float standardVerticalSpacing = 2;
 		const float singleLineHeight = 16;
 
+		public static Side SwitchY(this Side side) => side == Side.Up ? Side.Down : side == Side.Down ? Side.Up : side;
+
 		public static Rect Combine(this Rect self, Rect other)
 		{
 			float left = Mathf.Min(self.position.x, other.position.x);
@@ -109,11 +111,18 @@ namespace EasyEditor
 		}
 
 		public static Rect SliceOutLine(this ref Rect self, Side side = Side.Up, bool addSpace = true)
-		{
-			return self.SliceOut(singleLineHeight, side, addSpace);
-		}
+			=> self.SliceOut(singleLineHeight, side, addSpace);
 
+		// Only works for UI where Y increases downwards
 		public static Rect SliceOut(this ref Rect self, float pixels, Side side = Side.Up, bool addSpace = true)
+			=> self.SliceOut(pixels, addSpace ? standardVerticalSpacing : 0, side);
+
+		// Only works for spaces where Y increases upwards
+		public static Rect SliceOut_NonUI(this ref Rect self, float pixels, Side side = Side.Up, float spacing = 0) =>
+			self.SliceOut(pixels, spacing, side.SwitchY());
+
+		// Only works for UI where Y increases downwards
+		public static Rect SliceOut(this ref Rect self, float pixels, float spacing, Side side = Side.Up)
 		{
 			Rect slice = self;
 			if (side is Side.Up or Side.Down)
@@ -121,34 +130,28 @@ namespace EasyEditor
 				slice.height = pixels;
 
 				float newHeight = self.height - pixels;
-				if (addSpace)
-					newHeight -= standardVerticalSpacing;
+				newHeight -= spacing;
 				self.height = Mathf.Max(0, newHeight);
 
 				if (side == Side.Down)
 				{
-
 					if (newHeight < 0)
 						self.y -= newHeight;
 
 					slice.y = self.yMax;
-					if (addSpace)
-						slice.y += standardVerticalSpacing;
+					slice.y += spacing;
 				}
 				else
 				{
 					self.y += pixels;
-
-					if (addSpace)
-						self.y += standardVerticalSpacing;
+					self.y += spacing;
 				}
 			}
 			else
 			{
 				slice.width = pixels;
 				float newWidth = self.width - pixels;
-				if (addSpace) 
-					newWidth -= standardVerticalSpacing;
+				newWidth -= spacing;
 				self.width = Mathf.Max(0, newWidth);
 
 				if (side == Side.Right)
@@ -157,20 +160,36 @@ namespace EasyEditor
 						self.x -= newWidth;
 
 					slice.x = self.xMax;
-					if (addSpace)
-						self.width -= standardVerticalSpacing;
-
+					self.width -= spacing;
 				}
 				else
 				{
 					self.x += pixels;
-					if (addSpace)
-						self.x += standardVerticalSpacing;
+					self.x += spacing;
 				}
 			}
 
 			return slice;
 		}
+
+		public static Rect WithoutMargin(this Rect rect, float margin) =>
+			new(rect.position + new Vector2(margin, margin), rect.size - new Vector2(2 * margin, 2 * margin));
+
+		public static Rect WithoutMargin(this Rect rect, Vector2 margin) =>
+			new(rect.position + new Vector2(margin.x, margin.y), rect.size - new Vector2(2 * margin.x, 2 * margin.y));
+
+		// Only works for UI where Y increases downwards
+		public static Rect Shift(this Rect rect, float amount, Side side) =>
+			side switch
+			{
+				Side.Up => new Rect(rect.x, rect.y - amount, rect.width, rect.height),
+				Side.Down => new Rect(rect.x, rect.y + amount, rect.width, rect.height),
+				Side.Left => new Rect(rect.x - amount, rect.y, rect.width, rect.height),
+				Side.Right => new Rect(rect.x + amount, rect.y, rect.width, rect.height),
+				_ => rect
+			};
+
+		// Only works for spaces where Y increases upwards
+		public static Rect Shift_NonUI(this Rect rect, float amount, Side side) => rect.Shift(amount, side.SwitchY());
 	}
 }
-
