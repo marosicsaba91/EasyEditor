@@ -65,6 +65,12 @@ namespace EasyEditor
 		Pause,
 		Stop,
 		Loop,
+		ToEnd,
+		ToStart,
+		Next,
+		Previous,
+		FastForward,
+		FastBackward,
 
 		Cube,
 		Cylinder,
@@ -225,6 +231,15 @@ namespace EasyEditor
 			{ IconType.Pause,				new string[]{ "PauseButton" , "PauseButton@2x" }},
 			{ IconType.Stop,				new string[]{ "PlayButton On", "PlayButton On@2x" }},
 			{ IconType.Loop,				new string[]{ "PreAudioLoopOff","PreAudioLoopOff@2x" }},
+
+			{ IconType.ToEnd,				new string[]{ "Animation.LastKey", "endButton"}},
+			{ IconType.ToStart,             new string[]{ "Animation.FirstKey", "beginButton" }},
+
+			{ IconType.Next,				new string[] { "Animation.NextKey" }},
+			{ IconType.Previous,            new string[] { "Animation.PrevKey" }},
+
+			{ IconType.FastForward,         new string[] { "Profiler.LastFrame" }},
+			{ IconType.FastBackward,		new string[] { "Profiler.FirstFrame" }},
 
 			{ IconType.Cube,				new string[]{ "PreMatCube", "PreMatCube@2x" }},
 			{ IconType.Cylinder,			new string[]{ "PreMatCylinder", "PreMatCylinder@2x" }},
@@ -1248,8 +1263,6 @@ namespace EasyEditor
 		"Package Manager",
 		"Package Manager@2x",
 		"PackageBadgeNew",
-		"Add-Available",
-		"Add-Available@2x",
 		"Download-Available",
 		"Download-Available@2x",
 		"Error",

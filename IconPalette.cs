@@ -8,7 +8,6 @@ using UnityEngine;
 
 namespace EasyEditor
 {
-
 	public class IconPalette : EditorWindow
 	{
 		Vector2 scrollPos;

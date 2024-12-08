@@ -47,7 +47,7 @@ namespace Asteroids.Editor
 			float labelWidth = GUI.skin.label.CalcSize(label).x;
 			position.SliceOut(labelWidth + 12, Side.Left);
 
-			Type currentType = property.GetManagedReferenceFieldType();
+			Type currentType = property.GetObjectOfProperty()?.GetType();
 			inheritedTypes = ApplyTypeFilter(property, att, inheritedTypes);
 
 			if (currentType == null)
@@ -69,6 +69,7 @@ namespace Asteroids.Editor
 
 			int tempIndent = EditorGUI.indentLevel;
 			EditorGUI.indentLevel = 0;
+
 			int resultTypeIndex = EditorGUI.Popup(position, currentTypeIndex, options);
 			EditorGUI.indentLevel = tempIndent;
 

@@ -157,7 +157,6 @@ namespace EasyEditor
 				FieldInfo field = parentAndFields[i].field;
 				object containerObject = parentAndFields[i].containingObject;
 				int index = parentAndFields[i].index;
-
 				if (index >= 0)
 					changed |= TrySetValueAt_(containerObject, field, index, newValue);
 				else
@@ -529,8 +528,8 @@ namespace EasyEditor
 
 			object value = field.GetValue(source);
 			if (value is IList iList)
-			{ 
-				if (!iList[index].Equals(newValue))
+			{
+				if (iList[index] == null || !iList[index].Equals(newValue))
 				{
 					iList[index] = newValue;
 					return true;
