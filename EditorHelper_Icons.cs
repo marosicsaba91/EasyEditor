@@ -42,6 +42,7 @@ namespace EasyEditor
 
 		CheckMark,
 		CheckMark_Big,
+		CheckMark_Circled,
 
 		Star,
 		Label,
@@ -209,7 +210,9 @@ namespace EasyEditor
 			{ IconType.Minus,				new string[]{ "Toolbar Minus", "Toolbar Minus@2x" }},
 
 			{ IconType.CheckMark,			new string[]{ "Valid","Valid@2x" }},
-			{ IconType.CheckMark_Big,		new string[]{ "FilterSelectedOnly" , "FilterSelectedOnly@2x" }},
+			{ IconType.CheckMark_Big,       new string[]{ "FilterSelectedOnly" , "FilterSelectedOnly@2x" }},
+			{ IconType.CheckMark_Circled,   new string[]{ "Progress", "Progress@2x" }},
+
 			{ IconType.Star,				new string[]{ "Favorite", "Favorite@2x" /*, "Favorite Icon"*/ }},
 			{ IconType.Label,				new string[]{ "FilterByLabel","FilterByLabel@2x" }},
 
