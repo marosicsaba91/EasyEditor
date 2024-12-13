@@ -161,6 +161,7 @@ namespace EasyEditor
 					changed |= TrySetValueAt_(containerObject, field, index, newValue);
 				else
 					changed |= TrySetValue_(containerObject, field, newValue);
+
 				newValue = containerObject;
 			}
 
@@ -478,7 +479,7 @@ namespace EasyEditor
 		}
 		static object GetValueAt_(object source, string memberName, int index)
 		{
-			if (GetValue_(source, memberName) is IList sequence)
+			if (GetValue_(source, memberName) is IList sequence && sequence.Count > index && index >= 0)
 				return sequence[index];
 			else
 				return null;
@@ -489,7 +490,7 @@ namespace EasyEditor
 			if (field == null) return null;
 
 			object fieldValue = field.GetValue(source);
-			if (fieldValue is IList iList)
+			if (fieldValue is IList iList && iList.Count > index && index >= 0)
 				return iList[index];
 
 			return null;
@@ -521,6 +522,7 @@ namespace EasyEditor
 			field.SetValue(source, newValue);
 			return true;
 		}
+
 		static bool TrySetValueAt_(object source, FieldInfo field, int index, object newValue)
 		{
 			if (source == null) return false;
@@ -529,17 +531,21 @@ namespace EasyEditor
 			object value = field.GetValue(source);
 			if (value is IList iList)
 			{
-				if (iList[index] == null || !iList[index].Equals(newValue))
+				if (iList.Count > index && index >= 0)
 				{
-					iList[index] = newValue;
-					return true;
+					if (iList[index] == null || !iList[index].Equals(newValue))
+					{
+						iList[index] = newValue;
+						return true;
+					}
 				}
+				else
+					Debug.LogWarning($"Could not set value at index {index} in {field.Name} because it's length is {iList.Count}");
 			}
-
 			return false;
 		}
 
-		
+
 		/*
 		static bool IsSubclassOf_GenericsSupported(Type subType, Type baseType)
 		{

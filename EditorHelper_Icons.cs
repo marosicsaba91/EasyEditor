@@ -21,7 +21,7 @@ namespace EasyEditor
 
 		Right,
 		Left,
-		Up, 
+		Up,
 		Down,
 
 		Help,
@@ -35,6 +35,8 @@ namespace EasyEditor
 
 		Visible,
 		InVisible,
+		Touchable,
+		UnTouchable,
 		Space3D,
 
 		Plus,
@@ -132,7 +134,7 @@ namespace EasyEditor
 
 		internal static void ProcessNiceIcons()
 		{
-			if (niceTextures.Count == Enum.GetValues(typeof(IconType)).Length ) return;
+			if (niceTextures.Count == Enum.GetValues(typeof(IconType)).Length) return;
 
 			niceTextures.Clear();
 
@@ -166,7 +168,7 @@ namespace EasyEditor
 		public static Texture GetIcon(IconType iconType, IconSize size = IconSize.Small)
 		{
 			if (!niceTextures.TryGetValue(iconType, out Dictionary<IconSize, Texture> variants))
-			{ 
+			{
 				variants = ProcessVariants(iconType, searchNames[iconType]);
 				niceTextures.Add(iconType, variants);
 			}
@@ -181,96 +183,103 @@ namespace EasyEditor
 		{
 			{ IconType.None, new string[0] },
 
-			{ IconType.Info,				new string[]{ "console.infoicon.sml", "console.infoicon"  }},
-			{ IconType.Warning,				new string[]{ "console.warnicon.sml", "console.warnicon" }},
-			{ IconType.Error,				new string[]{ "console.erroricon.sml", "console.erroricon" }},
-			{ IconType.InfoInactive,		new string[]{ "console.infoicon.inactive.sml", "console.infoicon.inactive.sml@2x" }},
-			{ IconType.WarningInactive,		new string[]{ "console.warnicon.inactive.sml", "console.warnicon.inactive.sml@2x" }},
-			{ IconType.ErrorInactive,		new string[]{ "console.erroricon.inactive.sml", "console.erroricon.inactive.sml@2x" }},
+			{ IconType.Info,                new string[]{ "console.infoicon.sml", "console.infoicon"  }},
+			{ IconType.Warning,             new string[]{ "console.warnicon.sml", "console.warnicon" }},
+			{ IconType.Error,               new string[]{ "console.erroricon.sml", "console.erroricon" }},
+			{ IconType.InfoInactive,        new string[]{ "console.infoicon.inactive.sml", "console.infoicon.inactive.sml@2x" }},
+			{ IconType.WarningInactive,     new string[]{ "console.warnicon.inactive.sml", "console.warnicon.inactive.sml@2x" }},
+			{ IconType.ErrorInactive,       new string[]{ "console.erroricon.inactive.sml", "console.erroricon.inactive.sml@2x" }},
 
 			{ IconType.Right,               new string[]{ "scrollright_uielements" }},
 			{ IconType.Left,                new string[]{ "scrollleft_uielements" }},
 			{ IconType.Up,                  new string[]{ "scrollup_uielements" }},
 			{ IconType.Down,                new string[]{ "scrolldown_uielements" }},
 
-			{ IconType.Help,				new string[]{ "_Help", "_Help@2x" }},
-			{ IconType.Menu,				new string[]{ "_Menu", "_Menu@2x" }},
-			{ IconType.Settings,			new string[]{ "_Popup", "_Popup@2x" }},
-			{ IconType.Context,				new string[]{ "Preset.Context", "Preset.Context@2x" }},
-			{ IconType.Mixer,				new string[]{ "Audio Mixer", "Audio Mixer@2x" }},
+			{ IconType.Help,                new string[]{ "_Help", "_Help@2x" }},
+			{ IconType.Menu,                new string[]{ "_Menu", "_Menu@2x" }},
+			{ IconType.Settings,            new string[]{ "_Popup", "_Popup@2x" }},
+			{ IconType.Context,             new string[]{ "Preset.Context", "Preset.Context@2x" }},
+			{ IconType.Mixer,               new string[]{ "Audio Mixer", "Audio Mixer@2x" }},
 
-			{ IconType.Refresh,				new string[]{ "Refresh", "Refresh@2x" }},
-			{ IconType.Save,				new string[]{ "Save", "Save@2x"}},
+			{ IconType.Refresh,             new string[]{ "Refresh", "Refresh@2x" }},
+			{ IconType.Save,                new string[]{ "Save", "Save@2x"}},
 
-			{ IconType.Visible,				new string[]{ "animationvisibilitytoggleon" , "animationvisibilitytoggleon@2x" }},
-			{ IconType.InVisible,			new string[]{ "animationvisibilitytoggleoff", "animationvisibilitytoggleoff@2x" }},
-			{ IconType.Space3D,				new string[]{ "AvatarPivot", "AvatarPivot@2x" }},
+			{ IconType.Visible,             new string[]{ "animationvisibilitytoggleon" , "animationvisibilitytoggleon@2x" }},
+			{ IconType.InVisible,           new string[]{ "animationvisibilitytoggleoff", "animationvisibilitytoggleoff@2x" }},
 
-			{ IconType.Plus,				new string[]{ "Toolbar Plus", "Toolbar Plus@2x" }},
-			{ IconType.Minus,				new string[]{ "Toolbar Minus", "Toolbar Minus@2x" }},
+			{ IconType.Touchable,           new string[]{ "scenepicking_pickable-mixed", "scenepicking_pickable-mixed@2x" }},
+			{ IconType.UnTouchable,         new string[]{ "scenepicking_notpickable-mixed", "scenepicking_notpickable-mixed@2x" }},
 
-			{ IconType.CheckMark,			new string[]{ "Valid","Valid@2x" }},
+			{ IconType.Space3D,             new string[]{ "AvatarPivot", "AvatarPivot@2x" }},
+
+			{ IconType.Plus,                new string[]{ "Toolbar Plus", "Toolbar Plus@2x" }},
+			{ IconType.Minus,               new string[]{ "Toolbar Minus", "Toolbar Minus@2x" }},
+
+			{ IconType.CheckMark,           new string[]{ "Valid","Valid@2x" }},
 			{ IconType.CheckMark_Big,       new string[]{ "FilterSelectedOnly" , "FilterSelectedOnly@2x" }},
 			{ IconType.CheckMark_Circled,   new string[]{ "Progress", "Progress@2x" }},
 
-			{ IconType.Star,				new string[]{ "Favorite", "Favorite@2x" /*, "Favorite Icon"*/ }},
-			{ IconType.Label,				new string[]{ "FilterByLabel","FilterByLabel@2x" }},
+			{ IconType.Star,                new string[]{ "Favorite", "Favorite@2x"}},
+			{ IconType.Label,               new string[]{ "FilterByLabel","FilterByLabel@2x" }},
 
 			{ IconType.Camera,              new string[]{ "FrameCapture","FrameCapture@2x" }},
 			{ IconType.Video,               new string[]{ "Profiler.Video", "Profiler.Video@2x" }},
-			{ IconType.Tool,				new string[]{ "CustomTool","CustomTool@2x" }},
-			{ IconType.Move,				new string[]{ "MoveTool","MoveTool@2x" }},
-			{ IconType.Cursor,				new string[]{ "Grid.Default","Grid.Default@2x" }},
-			{ IconType.Erase,				new string[]{ "Grid.EraserTool", "Grid.EraserTool@2x" }},
-			{ IconType.Fill,				new string[]{ "Grid.FillTool","Grid.FillTool@2x" }},
-			{ IconType.Paint,				new string[]{ "Grid.PaintTool","Grid.PaintTool@2x" }},
-			{ IconType.EyeDrop,				new string[]{ "Grid.PickingTool","Grid.PickingTool@2x" }},
-			{ IconType.Lightbulb,			new string[]{ "Lighting","Lighting@2x" }},
-			{ IconType.Audio,				new string[]{ "Profiler.Audio","Profiler.Audio@2x" }},
-			{ IconType.Linked,				new string[]{ "Linked","Linked@2x" }},
+			{ IconType.Tool,                new string[]{ "CustomTool","CustomTool@2x" }},
+			{ IconType.Move,                new string[]{ "MoveTool","MoveTool@2x" }},
+			{ IconType.Cursor,              new string[]{ "Grid.Default","Grid.Default@2x" }},
 
-			{ IconType.Record,				new string[]{ "Animation.Record" ,"Animation.Record@2x" }},
-			{ IconType.Play,				new string[]{ "PlayButton", "PlayButton@2x" }},
-			{ IconType.Pause,				new string[]{ "PauseButton" , "PauseButton@2x" }},
-			{ IconType.Stop,				new string[]{ "PlayButton On", "PlayButton On@2x" }},
-			{ IconType.Loop,				new string[]{ "PreAudioLoopOff","PreAudioLoopOff@2x" }},
+			{ IconType.Hand,                new string[]{ "ViewToolMove", "ViewToolMove@2x" }},
 
-			{ IconType.ToEnd,				new string[]{ "Animation.LastKey", "endButton"}},
+			{ IconType.Erase,               new string[]{ "Grid.EraserTool", "Grid.EraserTool@2x" }},
+			{ IconType.Fill,                new string[]{ "Grid.FillTool","Grid.FillTool@2x" }},
+			{ IconType.Paint,               new string[]{ "Grid.PaintTool","Grid.PaintTool@2x" }},
+			{ IconType.EyeDrop,             new string[]{ "Grid.PickingTool","Grid.PickingTool@2x" }},
+			{ IconType.Lightbulb,           new string[]{ "Lighting","Lighting@2x" }},
+			{ IconType.Audio,               new string[]{ "Profiler.Audio","Profiler.Audio@2x" }},
+			{ IconType.Linked,              new string[]{ "Linked","Linked@2x" }},
+
+			{ IconType.Record,              new string[]{ "Animation.Record" ,"Animation.Record@2x" }},
+			{ IconType.Play,                new string[]{ "PlayButton", "PlayButton@2x" }},
+			{ IconType.Pause,               new string[]{ "PauseButton" , "PauseButton@2x" }},
+			{ IconType.Stop,                new string[]{ "PlayButton On", "PlayButton On@2x" }},
+			{ IconType.Loop,                new string[]{ "PreAudioLoopOff","PreAudioLoopOff@2x" }},
+
+			{ IconType.ToEnd,               new string[]{ "Animation.LastKey", "endButton"}},
 			{ IconType.ToStart,             new string[]{ "Animation.FirstKey", "beginButton" }},
 
-			{ IconType.Next,				new string[] { "Animation.NextKey" }},
+			{ IconType.Next,                new string[] { "Animation.NextKey" }},
 			{ IconType.Previous,            new string[] { "Animation.PrevKey" }},
 
 			{ IconType.FastForward,         new string[] { "Profiler.LastFrame" }},
-			{ IconType.FastBackward,		new string[] { "Profiler.FirstFrame" }},
+			{ IconType.FastBackward,        new string[] { "Profiler.FirstFrame" }},
 
-			{ IconType.Cube,				new string[]{ "PreMatCube", "PreMatCube@2x" }},
-			{ IconType.Cylinder,			new string[]{ "PreMatCylinder", "PreMatCylinder@2x" }},
-			{ IconType.Sphere,				new string[]{ "PreMatSphere", "PreMatSphere@2x" }},
-			{ IconType.Torus,				new string[]{ "PreMatTorus", "PreMatTorus@2x" }},
+			{ IconType.Cube,                new string[]{ "PreMatCube", "PreMatCube@2x" }},
+			{ IconType.Cylinder,            new string[]{ "PreMatCylinder", "PreMatCylinder@2x" }},
+			{ IconType.Sphere,              new string[]{ "PreMatSphere", "PreMatSphere@2x" }},
+			{ IconType.Torus,               new string[]{ "PreMatTorus", "PreMatTorus@2x" }},
 
-			{ IconType.A,					new string[]{ "PreTexA", "PreTexA@2x" }},
-			{ IconType.R,					new string[]{ "PreTexR", "PreTexR@2x" }},
-			{ IconType.G,					new string[]{ "PreTexG", "PreTexG@2x" }},
-			{ IconType.B,					new string[]{ "PreTexB", "PreTexB@2x" }},
+			{ IconType.A,                   new string[]{ "PreTexA", "PreTexA@2x" }},
+			{ IconType.R,                   new string[]{ "PreTexR", "PreTexR@2x" }},
+			{ IconType.G,                   new string[]{ "PreTexG", "PreTexG@2x" }},
+			{ IconType.B,                   new string[]{ "PreTexB", "PreTexB@2x" }},
 
-			{ IconType.FolderClosed,		new string[]{ "Folder Icon" }},
-			{ IconType.FolderOpened,		new string[]{ "FolderOpened Icon" }},
-			{ IconType.FolderEmpty,			new string[]{ "FolderEmpty Icon" }},
+			{ IconType.FolderClosed,        new string[]{ "Folder Icon" }},
+			{ IconType.FolderOpened,        new string[]{ "FolderOpened Icon" }},
+			{ IconType.FolderEmpty,         new string[]{ "FolderEmpty Icon" }},
 
-			{ IconType.CS_Script,			new string[]{ "cs Script Icon" }},
-			{ IconType.ScriptableObject,	new string[]{ "ScriptableObject Icon" }},
-			{ IconType.Prefab,				new string[]{ "Prefab Icon" }},
-			{ IconType.GameObject,			new string[]{ "GameObject Icon" }},
-			{ IconType.Material,			new string[]{ "Material Icon" }},
-			{ IconType.Mesh,				new string[]{ "Mesh Icon" }},
-			{ IconType.TextAsset,			new string[]{ "TextAsset Icon" }},
-			{ IconType.Texture,				new string[]{ "Texture Icon" }},
+			{ IconType.CS_Script,           new string[]{ "cs Script Icon" }},
+			{ IconType.ScriptableObject,    new string[]{ "ScriptableObject Icon" }},
+			{ IconType.Prefab,              new string[]{ "Prefab Icon" }},
+			{ IconType.GameObject,          new string[]{ "GameObject Icon" }},
+			{ IconType.Material,            new string[]{ "Material Icon" }},
+			{ IconType.Mesh,                new string[]{ "Mesh Icon" }},
+			{ IconType.TextAsset,           new string[]{ "TextAsset Icon" }},
+			{ IconType.Texture,             new string[]{ "Texture Icon" }},
 
-			{ IconType.Search,				new string[]{ "Search Icon" }},
-			{ IconType.X,				new string[]{ "CrossIcon" }},
+			{ IconType.Search,              new string[]{ "Search Icon" }},
+			{ IconType.X,               new string[]{ "CrossIcon" }},
 
-			{ IconType.Unity,				new string[]{ "UnityLogo" }},
+			{ IconType.Unity,               new string[]{ "UnityLogo" }},
 		};
 
 		public static readonly string[] allNames =
