@@ -1,9 +1,7 @@
 ﻿using UnityEngine;
 using System;
-using EasyEditor;
 using System.Collections.Generic;
 using System.Reflection;
-
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -467,5 +465,6 @@ namespace EasyEditor
 			return h;
 		}
 	}
-}
 #endif
+
+}
