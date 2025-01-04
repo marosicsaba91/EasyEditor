@@ -118,7 +118,7 @@ namespace EasyEditor
 			=> self.SliceOut(pixels, addSpace ? standardVerticalSpacing : 0, side);
 
 		// Only works for spaces where Y increases upwards
-		public static Rect SliceOut_NonUI(this ref Rect self, float pixels, Side side = Side.Up, float spacing = 0) =>
+		public static Rect SliceOut_NonEditor(this ref Rect self, float pixels, Side side = Side.Up, float spacing = 0) =>
 			self.SliceOut(pixels, spacing, side.SwitchY());
 
 		// Only works for UI where Y increases downwards
