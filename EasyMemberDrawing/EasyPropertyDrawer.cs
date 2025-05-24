@@ -1,5 +1,4 @@
 ﻿#if UNITY_EDITOR
-using EasyEditor;
 using System;
 using System.Reflection;
 using UnityEditor;
@@ -20,6 +19,8 @@ namespace EasyEditor
 		EasyProperty _easyMember;
 		FieldInfo _fieldInfo;
 		PropertyInfo _propertyInfo;
+
+		EasyRangeAttribute _rangeAttribute;
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
@@ -49,11 +50,14 @@ namespace EasyEditor
 			bool savedEnabled = GUI.enabled;
 			if (_propertyInfo.SetMethod == null)
 				GUI.enabled = false;
-			 
+
 			object newValue = oldValue;
 			try
 			{
-				newValue = EditorHelper.AnythingField(position, _type, oldValue, label, ref isExpanded);
+				if (_rangeAttribute != null && (_type == typeof(int) || _type == typeof(float)))
+					newValue = DrawSlider(position, _type, oldValue, label, _rangeAttribute.min, _rangeAttribute.max);
+				else
+					newValue = EditorHelper.AnythingField(position, _type, oldValue, label, ref isExpanded);
 			}
 			catch (InvalidCastException)
 			{
@@ -87,7 +91,10 @@ namespace EasyEditor
 			object newValue = oldValue;
 			try
 			{
-				newValue = EditorHelper.AnythingField(position, _type, oldValue, label, ref isExpanded);
+				if (_rangeAttribute != null && (_type == typeof(int) || _type == typeof(float)))
+					newValue = DrawSlider(position, _type, oldValue, label, _rangeAttribute.min, _rangeAttribute.max);
+				else
+					newValue = EditorHelper.AnythingField(position, _type, oldValue, label, ref isExpanded);
 			}
 			catch (InvalidCastException)
 			{
@@ -104,6 +111,19 @@ namespace EasyEditor
 			property.isExpanded = isExpanded;
 		}
 
+		object DrawSlider(Rect position, Type type, object oldValue, GUIContent label, float min, float max)
+		{
+			if (type == typeof(int))
+				return EditorGUI.IntSlider(position, label, (int)oldValue, Mathf.FloorToInt(min), Mathf.CeilToInt(max));
+			else if (type == typeof(float))
+				return EditorGUI.Slider(position, label, (float)oldValue, min, max);
+			else
+			{
+				EasyEditorUtility.HandleTypeError(position, label, $" Type: {type} is not supported type for RangeAttribute!");
+				return oldValue;
+			}
+		}
+
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
 		{
 			SetupMemberInfo(property);
@@ -118,14 +138,18 @@ namespace EasyEditor
 				_owner = property.GetObjectWithProperty();
 				_ownerType = _owner.GetType();
 				_memberName = _easyMember.propertyName;
-				
+
 				if (TryGetFieldInfo(_ownerType, _memberName, out _fieldInfo))
 					_type = _fieldInfo.FieldType;
 				else if (TryGetPropertyInfo(_ownerType, _memberName, out _propertyInfo))
 					_type = _propertyInfo.PropertyType;
 
 				_serializedObject = property.serializedObject.targetObject;
+
+				FieldInfo infoOfEasyMember = _ownerType.GetField(property.name, EasyEditorUtility.allMembersBindings);
+				_rangeAttribute = Attribute.GetCustomAttribute(infoOfEasyMember, typeof(EasyRangeAttribute)) as EasyRangeAttribute;
 			}
+
 		}
 
 		float AnythingHeight(Type type, SerializedProperty property)
@@ -140,7 +164,7 @@ namespace EasyEditor
 				return Nice4X4MatrixDrawer.PropertyHeight(property);  // Add Universal solution
 
 			return EditorGUIUtility.singleLineHeight;
-		} 
+		}
 
 		public static bool TryGetFieldInfo(Type ownerType, string name, out FieldInfo fieldInfo)
 		{

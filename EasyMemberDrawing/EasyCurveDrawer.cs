@@ -3,7 +3,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
-using UnityEngine; 
+using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace EasyEditor
@@ -11,7 +11,7 @@ namespace EasyEditor
 	[CustomPropertyDrawer(typeof(EasyCurve))]
 	class EasyCurveDrawer : PropertyDrawer
 	{
-		string _memberName; 
+		string _memberName;
 		Type _ownerType;
 		Object _serializedObject;
 		object _owner;
@@ -56,12 +56,25 @@ namespace EasyEditor
 
 			Vector2 size = new(1, 1);
 			Rect area = new(-(size / 2f), size);
-			_curvePreview.zoom = _easyFunction.functionZoom;
-			_curvePreview.offset = _easyFunction.functionOffset;
+
+			if (_easyFunction.fixPosition)
+			{
+				_curvePreview.Zoom = _easyFunction.fixRect.height * 1.2f;
+				_curvePreview.offset = _easyFunction.fixRect.center;
+			}
+			else
+			{
+				_curvePreview.Zoom = _easyFunction.functionZoom;
+				_curvePreview.offset = _easyFunction.functionOffset;
+			}
+
 			_curvePreview.Draw(content, _floatFunction, area, EditorHelper.functionColor, isExpanded);
-			// property.isExpanded = isExpanded;
-			_easyFunction.functionOffset = _curvePreview.offset;
-			_easyFunction.functionZoom = _curvePreview.zoom;
+
+			if (!_easyFunction.fixPosition)
+			{
+				_easyFunction.functionOffset = _curvePreview.offset;
+				_easyFunction.functionZoom = _curvePreview.zoom;
+			}
 		}
 
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
