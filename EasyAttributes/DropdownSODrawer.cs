@@ -28,7 +28,15 @@ namespace EasyEditor
 			ScriptableObject so = property.objectReferenceValue as ScriptableObject;
 
 			List<Object> all = ObjectBrowserCache.GetScriptableObjectsByType(type);
-			List<string> names = all.Select(i => i.name).ToList();
+			List<string> names = new();
+			foreach (Object obj in all)
+			{
+				ScriptableObject scriptableObject = obj as ScriptableObject;
+				if (scriptableObject != null)
+					names.Add(scriptableObject.name);
+			}
+
+
 			names.Insert(0, "None");
 
 			int lastIndex = all.IndexOf(so) + 1;
