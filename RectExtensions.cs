@@ -129,8 +129,7 @@ namespace EasyEditor
 			{
 				slice.height = pixels;
 
-				float newHeight = self.height - pixels;
-				newHeight -= spacing;
+				float newHeight = self.height - pixels - spacing;
 				self.height = Mathf.Max(0, newHeight);
 
 				if (side == Side.Down)
@@ -150,8 +149,7 @@ namespace EasyEditor
 			else
 			{
 				slice.width = pixels;
-				float newWidth = self.width - pixels;
-				newWidth -= spacing;
+				float newWidth = self.width - pixels - spacing;
 				self.width = Mathf.Max(0, newWidth);
 
 				if (side == Side.Right)
@@ -160,7 +158,7 @@ namespace EasyEditor
 						self.x -= newWidth;
 
 					slice.x = self.xMax;
-					self.width -= spacing;
+					slice.x += spacing;
 				}
 				else
 				{

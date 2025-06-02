@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Generic; 
+using System.Linq; 
+using Debug = UnityEngine.Debug;
 
 namespace EasyEditor
 {
@@ -21,6 +22,9 @@ namespace EasyEditor
 				InspectorDrawingUtility.TryGetAGetterFromMember(owner.GetType(), conditionMemberName, out Func<object, bool> condition);
 				if (condition != null)
 					_conditionGetters.Add(condition);
+				else
+					Debug.LogError($"Condition Member {conditionMemberName} not found in {owner.GetType().Name}."+
+					$"It might have been implemented in a base class. If so, make it protected.");
 			}
 			_initialized = true;
 #endif

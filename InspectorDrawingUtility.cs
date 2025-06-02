@@ -135,8 +135,6 @@ namespace EasyEditor
 			}
 		}
 
-
-
 		public static bool TryGetAGetterFromMember<T>(Type ownerType, string memberName, out Func<object, T> getter)
 		{
 			if (string.IsNullOrEmpty(memberName))
@@ -173,7 +171,7 @@ namespace EasyEditor
 			{
 				Type returnType = method.ReturnType;
 				Type expectedType = typeof(T);
-				bool isReturnTypeValid = 
+				bool isReturnTypeValid =
 					returnType == expectedType ||
 					returnType.IsSubclassOf(expectedType);
 
@@ -218,7 +216,7 @@ namespace EasyEditor
 			propertyInfo = null;
 			return false;
 		}
-		  
+
 	}
 }
 #endif
