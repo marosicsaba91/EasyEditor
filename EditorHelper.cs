@@ -277,12 +277,12 @@ namespace EasyEditor
 		public static float GetStandardPanelHeight(int standardLineCount) =>
 			standardLineCount * EditorGUIUtility.singleLineHeight + (standardLineCount - 1) * EditorGUIUtility.standardVerticalSpacing;
 
-		public static T DrawEnumToggle<T>(T enumValue, Func<T, bool> isEnabled = null) where T : System.Enum => DrawEnumToggle(null as GUIContent, enumValue, isEnabled);
-		public static T DrawEnumToggle<T>(string label, T enumValue, Func<T, bool> isEnabled = null) where T : System.Enum => DrawEnumToggle(new GUIContent(label), enumValue, isEnabled);
+		public static T DrawEnumToggle<T>(T enumValue, Func<T, bool> isEnabled = null) where T : Enum => DrawEnumToggle(null as GUIContent, enumValue, isEnabled);
+		public static T DrawEnumToggle<T>(string label, T enumValue, Func<T, bool> isEnabled = null) where T : Enum => DrawEnumToggle(new GUIContent(label), enumValue, isEnabled);
 
-		public static T DrawEnumToggle<T>(GUIContent label, T enumValue, Func<T, bool> isEnabled = null) where T : System.Enum
+		public static T DrawEnumToggle<T>(GUIContent label, T enumValue, Func<T, bool> isEnabled = null) where T : Enum
 		{
-			List<T> enumValues = System.Enum.GetValues(typeof(T)).Cast<T>().ToList();
+			List<T> enumValues = Enum.GetValues(typeof(T)).Cast<T>().ToList();
 			EditorGUILayout.BeginHorizontal();
 
 			if (label != null && label != GUIContent.none)
@@ -302,16 +302,16 @@ namespace EasyEditor
 
 				GUI.enabled = true;
 			}
-			EditorGUILayout.EndHorizontal();
 
+			EditorGUILayout.EndHorizontal();
 			return enumValue;
 		}
 
 
-		public static T DrawEnumToggle<T>(Rect position, T enumValue, Func<T, bool> isEnabled = null) where T : System.Enum => DrawEnumToggle(position, null as GUIContent, enumValue, isEnabled);
-		public static T DrawEnumToggle<T>(Rect position, string label, T enumValue, Func<T, bool> isEnabled = null) where T : System.Enum => DrawEnumToggle(position, new GUIContent(label), enumValue, isEnabled);
+		public static T DrawEnumToggle<T>(Rect position, T enumValue, Func<T, bool> isEnabled = null) where T : Enum => DrawEnumToggle(position, null as GUIContent, enumValue, isEnabled);
+		public static T DrawEnumToggle<T>(Rect position, string label, T enumValue, Func<T, bool> isEnabled = null) where T : Enum => DrawEnumToggle(position, new GUIContent(label), enumValue, isEnabled);
 
-		public static T DrawEnumToggle<T>(Rect position, GUIContent label, T enumValue, Func<T, bool> isEnabled = null) where T : System.Enum
+		public static T DrawEnumToggle<T>(Rect position, GUIContent label, T enumValue, Func<T, bool> isEnabled = null) where T : Enum
 		{
 			List<T> enumValues = System.Enum.GetValues(typeof(T)).Cast<T>().ToList();
 
