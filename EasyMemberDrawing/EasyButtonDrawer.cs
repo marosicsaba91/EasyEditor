@@ -29,7 +29,6 @@ namespace EasyEditor
 				DrawButton(position, label, owner, methodInfo);
 			else
 				EasyEditorUtility.HandleTypeError(position, label, $"No valid member named: {_easyButton.methodName}");
-
 		}
 
 		public static bool TryGetMethodInfo(Type ownerType, string name, out MethodInfo methodInfo)

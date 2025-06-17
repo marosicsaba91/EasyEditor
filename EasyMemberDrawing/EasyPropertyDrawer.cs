@@ -65,8 +65,6 @@ namespace EasyEditor
 				_memberName = null;
 			}
 
-
-
 			GUI.enabled = savedEnabled;
 			if (!Equals(oldValue, newValue))
 			{
@@ -127,7 +125,7 @@ namespace EasyEditor
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
 		{
 			SetupMemberInfo(property);
-			return AnythingHeight(_type, property);
+			return EditorHelper.GetAnythingHeight(_type, property.isExpanded);
 		}
 
 		void SetupMemberInfo(SerializedProperty property)
@@ -149,21 +147,6 @@ namespace EasyEditor
 				FieldInfo infoOfEasyMember = _ownerType.GetField(property.name, EasyEditorUtility.allMembersBindings);
 				_rangeAttribute = Attribute.GetCustomAttribute(infoOfEasyMember, typeof(EasyRangeAttribute)) as EasyRangeAttribute;
 			}
-
-		}
-
-		float AnythingHeight(Type type, SerializedProperty property)
-		{
-			if (type == typeof(Rect) ||
-				type == typeof(RectInt))
-				return 2 * EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-			if (type == typeof(Bounds) ||
-				type == typeof(BoundsInt))
-				return 3 * EditorGUIUtility.singleLineHeight + 2 * EditorGUIUtility.standardVerticalSpacing;
-			if (type == typeof(Matrix4x4))
-				return Nice4X4MatrixDrawer.PropertyHeight(property);  // Add Universal solution
-
-			return EditorGUIUtility.singleLineHeight;
 		}
 
 		public static bool TryGetFieldInfo(Type ownerType, string name, out FieldInfo fieldInfo)

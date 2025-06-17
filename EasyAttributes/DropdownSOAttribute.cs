@@ -1,5 +1,8 @@
 ﻿using UnityEngine;
 
-public class DropdownSOAttribute : PropertyAttribute
+namespace EasyEditor
 {
+	public class DropdownSOAttribute : PropertyAttribute
+	{
+	}
 }

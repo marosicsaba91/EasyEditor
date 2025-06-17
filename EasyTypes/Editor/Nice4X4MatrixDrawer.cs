@@ -95,9 +95,8 @@ namespace EasyEditor
 			return singleLineHeight * lineCount + spacing * (lineCount - 1);
 		}
 
-		public static float PropertyHeight(SerializedProperty property)
+		public static float PropertyHeight(bool isExpanded)
 		{
-			bool isExpanded = property.isExpanded;
 			float singleLineHeight = EditorGUIUtility.singleLineHeight;
 			float spacing = EditorGUIUtility.standardVerticalSpacing;
 			int lineCount = isExpanded ? 4 : 1;

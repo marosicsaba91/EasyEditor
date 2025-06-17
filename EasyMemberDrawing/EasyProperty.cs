@@ -6,7 +6,7 @@ namespace EasyEditor
 	public class EasyProperty
 	{
 		[NonSerialized] public string propertyName;
-		[NonSerialized] public bool usePropertyNameAsLabel; 
+		[NonSerialized] public bool usePropertyNameAsLabel;
 
 		public EasyProperty(string propertyName, bool usePropertyNameAsLabel = false)
 		{

@@ -17,7 +17,6 @@ namespace EasyEditor
 			_initialized = false;
 		}
 
-
 		public void Initialize(object owner)
 		{
 			if (_initialized)

@@ -269,12 +269,29 @@ namespace EasyEditor
 			if (t.IsSubclassOf(typeof(Enum)))
 				return EditorGUI.EnumPopup(position, label, (Enum)value);
 			if (t == typeof(Matrix4x4))
-				return Nice4X4MatrixDrawer.Draw(position, label, (Matrix4x4)value, ref isExpanded);  // Add Universal solution
+				return Nice4X4MatrixDrawer.Draw(position, label, (Matrix4x4)value, ref isExpanded);  
+			// Add Universal solution
 
 			return null;
-		}
+        }
 
-		public static float GetStandardPanelHeight(int standardLineCount) =>
+        public static float GetAnythingHeight(Type type, bool isExpanded)
+        {
+            if (type == typeof(Rect) ||
+                type == typeof(RectInt))
+                return 2 * EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+            if (type == typeof(Bounds) ||
+                type == typeof(BoundsInt))
+                return 3 * EditorGUIUtility.singleLineHeight + 2 * EditorGUIUtility.standardVerticalSpacing;
+            if (type == typeof(Matrix4x4))
+                return Nice4X4MatrixDrawer.PropertyHeight(isExpanded);  // Add Universal solution
+
+            // Add Universal solution
+
+            return EditorGUIUtility.singleLineHeight;
+        }
+
+        public static float GetStandardPanelHeight(int standardLineCount) =>
 			standardLineCount * EditorGUIUtility.singleLineHeight + (standardLineCount - 1) * EditorGUIUtility.standardVerticalSpacing;
 
 		public static T DrawEnumToggle<T>(T enumValue, Func<T, bool> isEnabled = null) where T : Enum => DrawEnumToggle(null as GUIContent, enumValue, isEnabled);
