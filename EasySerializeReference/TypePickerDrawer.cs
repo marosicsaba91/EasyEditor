@@ -30,25 +30,31 @@ namespace Asteroids.Editor
 				if (managedReferenceFieldType == null)
 					return;
 
-				DrawTypePicker(position, property, label, managedReferenceFieldType, att);
+				Rect full = position;
+				Rect pickerRect = full.SliceOut(position.width - 12, Side.Right);
+				DrawTypePicker(pickerRect, property, label, managedReferenceFieldType, att);
 			}
 
 			// Draw the property of the selected type
 			EditorGUI.PropertyField(position, property, label, includeChildren: true);
 		}
 
-		static void DrawTypePicker(Rect position, SerializedProperty property, GUIContent label, Type managedReferenceFieldType, TypePickerAttribute att)
+		public static void DrawTypePicker(Rect position, SerializedProperty property, GUIContent label, Type managedReferenceFieldType, TypePickerAttribute att = null)
 		{
 			position.height = EditorGUIUtility.singleLineHeight;
 			List<Type> inheritedTypes = GetInheritedNonAbstractTypes(managedReferenceFieldType);
 
 			int currentTypeIndex;
 
-			float labelWidth = GUI.skin.label.CalcSize(label).x;
-			position.SliceOut(labelWidth + 12, Side.Left);
+			if (label != GUIContent.none)
+			{
+				float labelWidth = GUI.skin.label.CalcSize(label).x;
+				position.SliceOut(labelWidth, Side.Left);
+			}
 
 			Type currentType = property.GetObjectOfProperty()?.GetType();
-			inheritedTypes = ApplyTypeFilter(property, att, inheritedTypes);
+			if (att != null)
+				inheritedTypes = ApplyTypeFilter(property, att, inheritedTypes);
 
 			if (currentType == null)
 				currentTypeIndex = 0;
@@ -56,15 +62,15 @@ namespace Asteroids.Editor
 			{
 				currentTypeIndex = inheritedTypes.IndexOf(currentType) + 1;
 
-				if (!property.IsExpandable() || att.forceSmall)
+				if (!property.IsExpandable() || (att != null && att.forceSmall))
 				{
 					position.width = 20;
 					position.x -= 20;
 				}
 			}
 
-
-			IEnumerable<string> typeNames = inheritedTypes.Select(t => TypeToString(t, att.typeToStringConversion));
+			TypePickerAttribute.TypeToStringConversion conversion = att != null ? att.typeToStringConversion : TypePickerAttribute.TypeToStringConversion.ShortName;
+			IEnumerable<string> typeNames = inheritedTypes.Select(t => TypeToString(t, conversion));
 			string[] options = new[] { "- Select Type -" }.Concat(typeNames).ToArray();
 
 			int tempIndent = EditorGUI.indentLevel;

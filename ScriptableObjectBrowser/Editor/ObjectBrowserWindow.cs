@@ -9,31 +9,41 @@ using Object = UnityEngine.Object;
 
 namespace EasyEditor
 {
+	public struct ObjectsBrowserColumn
+	{
+		public string propertyName;
+		public GUIContent label;
+		public float width;
+	}
+
 	public enum ObjectsBrowserView { TableView, ListView }
 
-	class ObjectsBrowserWindow : EditorWindow
+	class ObjectBrowserWindow : EditorWindow
 	{
 		const float foldoutWidth = 15;
 		const float spacing = 2;
 
-		readonly List<Object> openedObjects = new();
+		static readonly List<Object> openedObjects = new();
 		static string _savePath = "ScriptableObjects";
 
-		Texture soPic;
-		Texture mbPic;
-		Texture goPic;
-		Texture prPic;
-		Texture newPic;
+		static Texture soPic;
+		static Texture mbPic;
+		static Texture goPic;
+		static Texture prPic;
+		static Texture newPic;
 
-		Vector2 scrollPosition;
-		GUIStyle selectedButtonStyle;
+		static Vector2 scrollPosition;
+		static GUIStyle selectedButtonStyle;
+		static float SingleLineHeight => EditorGUIUtility.singleLineHeight;
 
-		[MenuItem("Tools/Objects Browser")]
+		static int resizedColumn = -1;
+		static float lastMouseX = 0;
+
+		[MenuItem("Tools/Object Browser")]
 		public static void Open()
 		{
-			ObjectsBrowserWindow window = GetWindow<ObjectsBrowserWindow>();
-			window.titleContent = new GUIContent("Objects Browser");
-
+			ObjectBrowserWindow window = GetWindow<ObjectBrowserWindow>();
+			window.titleContent = new GUIContent("Object Browser");
 		}
 
 		void OnGUI()
@@ -61,18 +71,17 @@ namespace EasyEditor
 			if (hasSelected)
 				DrawObjectClass(settings, selectedTypeSetting, settings.ShowPrefabs, settings.SelectedView, ref fullWindowRect);
 
-
 			ObjectBrowserSetting.TrySave();
 		}
 
-		void DrawFooter(Type selected, ObjectBrowserSetting settings, ref Rect fullWindowRect)
+		static void DrawFooter(Type selected, ObjectBrowserSetting settings, ref Rect fullWindowRect)
 		{
 			Rect line = fullWindowRect.SliceOut(22, Side.Down, false);
 
 			EditorHelper.DrawBox(line, EditorHelper.buttonBackgroundColor);
 			line.position += new Vector2(0, 2);
 			line.height -= 4;
-			
+
 			if (settings.SelectedView == ObjectsBrowserView.TableView)
 			{
 				Rect rect1 = line.SliceOut(110, Side.Left);
@@ -105,10 +114,9 @@ namespace EasyEditor
 				if (GUI.Button(rect, content))
 					settings.ShowPrefabs = !showPrefabs;
 			}
-
 		}
 
-		void DrawTypeTabs(IReadOnlyList<TypeDisplaySetting> types, Type selected, ObjectBrowserSetting settings, ref Rect fullWindowRect)
+		static void DrawTypeTabs(IReadOnlyList<TypeDisplaySetting> types, Type selected, ObjectBrowserSetting settings, ref Rect fullWindowRect)
 		{
 			const float actionButtonWidth = 28;
 			const float lineHight = 22;
@@ -132,6 +140,7 @@ namespace EasyEditor
 			float fullWindowWidth = fullWindowRect.width;
 			float availableWidth = headerRect.width;
 			Rect backgroundRect = new(0, 0, fullWindowWidth, lineHight + spacing * 2);
+
 			EditorHelper.DrawBox(backgroundRect, EditorHelper.buttonBackgroundColor);
 
 			TypeDisplaySetting selectedTypeSetting = types.FirstOrDefault(x => x.ObjectType == selected);
@@ -202,10 +211,8 @@ namespace EasyEditor
 			EditorGUILayout.GetControlRect(GUILayout.Height(fullHeaderHeight));
 			fullWindowRect.SliceOut(fullHeaderHeight + spacing * 3, Side.Up, addSpace: false);
 
-			float GetButtonWidth(string name) =>
+			static float GetButtonWidth(string name) =>
 				GUI.skin.button.CalcSize(new GUIContent(name)).x + buttonWidthExtra;
-
-
 		}
 
 		void DrawObjectClass(ObjectBrowserSetting settings, TypeDisplaySetting typeDisplaySetting, bool preferFiles, ObjectsBrowserView selectedView, ref Rect fullWindowRect)
@@ -213,11 +220,13 @@ namespace EasyEditor
 			ObjectBrowserCache.CleanupObjectCache();
 			List<Object> objects = ObjectBrowserCache.GetObjectsByType(typeDisplaySetting.ObjectType, preferFiles);
 
+			ObjectTableDrawer customTableDrawer = ObjectBrowserCache.GetCustomDrawer(typeDisplaySetting.ObjectType);
+
 			scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Width(fullWindowRect.width), GUILayout.Height(fullWindowRect.height));
 			if (selectedView == ObjectsBrowserView.ListView)
 				DrawListView(typeDisplaySetting, objects);
 			else if (selectedView == ObjectsBrowserView.TableView)
-				DrawTableView(settings, typeDisplaySetting, objects);
+				DrawTableView(settings, typeDisplaySetting, objects, customTableDrawer);
 
 			Type selected = typeDisplaySetting.ObjectType;
 			bool isScriptableObject = selected != null && selected.IsSubclassOf(typeof(ScriptableObject));
@@ -231,7 +240,7 @@ namespace EasyEditor
 			EditorGUILayout.EndScrollView();
 		}
 
-		void DrawListView(TypeDisplaySetting typeDisplaySetting, List<Object> objects)
+		static void DrawListView(TypeDisplaySetting typeDisplaySetting, List<Object> objects)
 		{
 			for (int i = 0; i < objects.Count; i++)
 			{
@@ -247,7 +256,7 @@ namespace EasyEditor
 			}
 		}
 
-		void DrawFoldObject(Object obj)
+		static void DrawFoldObject(Object obj)
 		{
 			bool isOpen = openedObjects.Contains(obj);
 			Rect rect = EditorGUILayout.GetControlRect();
@@ -279,27 +288,14 @@ namespace EasyEditor
 
 		}
 
-		struct Column
-		{
-			public string propertyName;
-			public string label;
-			public float width;
-		}
-
-		static float SingleLineHeight => EditorGUIUtility.singleLineHeight;
-
-		int resizedColumn = -1;
-		float lastMouseX = 0;
-
-
-		void DrawTableView(ObjectBrowserSetting settings, TypeDisplaySetting typeDisplaySetting, List<Object> objects)
+		void DrawTableView(ObjectBrowserSetting settings, TypeDisplaySetting typeDisplaySetting, List<Object> objects, ObjectTableDrawer customTableDrawer)
 		{
 			if (objects.Count == 0) return;
-			List<Column> columns = FindColumns(objects, typeDisplaySetting);
+			List<ObjectsBrowserColumn> columns = FindColumns(objects, typeDisplaySetting, customTableDrawer);
 
 			// Calculate header height
 			float headerHeight = SingleLineHeight;
-			foreach (Column column in columns)
+			foreach (ObjectsBrowserColumn column in columns)
 			{
 				float labelWidth = GUI.skin.label.CalcSize(new GUIContent(column.label)).x;
 				if (labelWidth > column.width)
@@ -315,7 +311,7 @@ namespace EasyEditor
 			EditorGUILayout.GetControlRect(GUILayout.Width(nameWidth), GUILayout.Height(SingleLineHeight));
 			for (int i = 0; i < columns.Count; i++)
 			{
-				Column column = columns[i];
+				ObjectsBrowserColumn column = columns[i];
 				Rect rect = EditorGUILayout.GetControlRect(GUILayout.Width(column.width));
 				Vector2 pivot = new(rect.x + rect.height / 2, rect.center.y);
 				float labelWidth = GUI.skin.label.CalcSize(new GUIContent(column.label)).x;
@@ -337,8 +333,8 @@ namespace EasyEditor
 				}
 
 				// Resizer 
-				Rect resizeRect = new (rect.xMax, rect.y, 4, rect.height);
-				EditorGUI.DrawRect(resizeRect, new Color(0,0,0,0.2f));
+				Rect resizeRect = new(rect.xMax, rect.y, 4, rect.height);
+				EditorGUI.DrawRect(resizeRect, new Color(0, 0, 0, 0.2f));
 				Vector2 mouse = Event.current.mousePosition;
 				if (Event.current.type == EventType.MouseDown && resizeRect.Contains(mouse))
 				{
@@ -347,7 +343,7 @@ namespace EasyEditor
 				}
 				if (resizedColumn == i && lastMouseX != mouse.x)
 				{
-					const float minColumnWidth = 16; 
+					const float minColumnWidth = 16;
 					float width = column.width + mouse.x - lastMouseX;
 					width = MathF.Max(width, minColumnWidth);
 					column.width = width;
@@ -378,30 +374,34 @@ namespace EasyEditor
 				float maxHeigh = 0;
 				SerializedProperty[] properties = new SerializedProperty[columns.Count];
 				SerializedProperty property;
-				for (int columnI = 0; columnI<columns.Count; columnI++)
+				for (int columnI = 0; columnI < columns.Count; columnI++)
 				{
-					Column column = columns[columnI];
+					ObjectsBrowserColumn column = columns[columnI];
 					property = serializedObject.FindProperty(column.propertyName);
 					properties[columnI] = property;
 
 					if (property != null)
 					{
-						float height = EditorGUI.GetPropertyHeight(property, GUIContent.none, true);
+						EditorGUI.GetPropertyHeight(property, GUIContent.none, false);  // This is needed because of its side effect
+						float height = EditorGUIUtility.singleLineHeight;
 						if (height > maxHeigh)
 							maxHeigh = height;
 					}
 				}
-				 
-				for (int columnI = 0; columnI < properties.Length ; columnI++)
+
+				for (int columnI = 0; columnI < properties.Length; columnI++)
 				{
-					Column column = columns[columnI];
+					ObjectsBrowserColumn column = columns[columnI];
 					property = serializedObject.FindProperty(column.propertyName);
- 					rect = EditorGUILayout.GetControlRect(
-						GUILayout.Width(column.width),
-						GUILayout.Height(maxHeigh));
+					rect = EditorGUILayout.GetControlRect(
+					   GUILayout.Width(column.width),
+					   GUILayout.Height(maxHeigh));
 
 					if (property != null)
-						EditorGUI.PropertyField(rect, property, GUIContent.none, true);
+					{
+						if (customTableDrawer == null || !customTableDrawer.OverrideProperty_Base(rect, obj, property, column.propertyName))
+							EditorGUI.PropertyField(rect, property, GUIContent.none, false);
+					}
 				}
 
 				serializedObject.ApplyModifiedProperties();
@@ -409,11 +409,11 @@ namespace EasyEditor
 			}
 		}
 
-		static List<Column> FindColumns(List<Object> objects, TypeDisplaySetting setting)
+		static List<ObjectsBrowserColumn> FindColumns(List<Object> objects, TypeDisplaySetting setting, ObjectTableDrawer customTableDrawer)
 		{
 			float defaultPropertyWidth = 200;
 
-			List<Column> columns = new();
+			List<ObjectsBrowserColumn> columns = new();
 			for (int objI = 0; objI < objects.Count; objI++)
 			{
 				Object obj = objects[objI];
@@ -424,10 +424,19 @@ namespace EasyEditor
 				{
 					string pName = property.name;
 					int index = columns.FindIndex(c => c.propertyName == pName);
+					if (customTableDrawer != null)
+					{
+						if (!customTableDrawer.ShowScript() && pName == "m_Script")
+							continue;
+						if (customTableDrawer.HideProperty(pName))
+							continue;
+					}
 					if (index < 0)
 					{
 						string dataType = property.type;
 						// Find Saved Width 
+
+						GUIContent label = customTableDrawer != null ? customTableDrawer.GetGUIContent(pName, property.displayName) : new GUIContent(property.displayName);
 
 						float width;
 						if (setting.TryGetPropertySettings(setting.fullTypeName, pName, out PropertyDisplaySetting pds))
@@ -440,11 +449,11 @@ namespace EasyEditor
 								else
 									typeWidth = defaultPropertyWidth;
 
-							float nameWidth = GUI.skin.label.CalcSize(new GUIContent(pName)).x + 16;
+ 							float nameWidth = GUI.skin.label.CalcSize(label).x + 16;
 							width = MathF.Max(nameWidth, typeWidth);
 						}
 
-						Column column = new() { propertyName = pName, label = property.displayName, width = width };
+ 						ObjectsBrowserColumn column = new() { propertyName = pName, label = label, width = width };
 						columns.Add(column);
 					}
 				}
@@ -474,7 +483,6 @@ namespace EasyEditor
 			{ "Object", 200 },
 		};
 
-
 		static void DrawItemName(Object obj, Rect rect, bool selectButtonFirst)
 		{
 			const float selectButtonWidth = 20;
@@ -503,7 +511,7 @@ namespace EasyEditor
 				Selection.activeObject = obj;
 		}
 
-		void DrawAddNewItemButton(Rect rect, TypeDisplaySetting typeSetting)
+		static void DrawAddNewItemButton(Rect rect, TypeDisplaySetting typeSetting)
 		{
 			string[] selectionGuids = Selection.assetGUIDs;
 			for (int i = 0; i < selectionGuids.Length; i++)
