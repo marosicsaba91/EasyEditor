@@ -5,7 +5,6 @@ using UnityEngine;
 using System.Reflection;
 using UnityEditor;
 using System;
-using static UnityEngine.GraphicsBuffer;
 
 namespace EasyEditor.Internal
 {

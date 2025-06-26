@@ -16,7 +16,7 @@ namespace EasyEditor
 		public float width;
 	}
 
-	public enum ObjectsBrowserView { TableView, ListView }
+	//public enum ObjectsBrowserView { TableView, ListView }
 
 	class ObjectBrowserWindow : EditorWindow
 	{
@@ -66,54 +66,11 @@ namespace EasyEditor
 			Rect fullWindowRect = position;
 			fullWindowRect.position = Vector2.zero;
 			DrawTypeTabs(displayedTypes, selectedType, settings, ref fullWindowRect);
-			DrawFooter(selectedType, settings, ref fullWindowRect);
 
 			if (hasSelected)
-				DrawObjectClass(settings, selectedTypeSetting, settings.ShowPrefabs, settings.SelectedView, ref fullWindowRect);
+				DrawObjectClass(settings, selectedTypeSetting, settings.ShowPrefabs, ref fullWindowRect);
 
 			ObjectBrowserSetting.TrySave();
-		}
-
-		static void DrawFooter(Type selected, ObjectBrowserSetting settings, ref Rect fullWindowRect)
-		{
-			Rect line = fullWindowRect.SliceOut(22, Side.Down, false);
-
-			EditorHelper.DrawBox(line, EditorHelper.buttonBackgroundColor);
-			line.position += new Vector2(0, 2);
-			line.height -= 4;
-
-			if (settings.SelectedView == ObjectsBrowserView.TableView)
-			{
-				Rect rect1 = line.SliceOut(110, Side.Left);
-				rect1.x += spacing;
-				if (GUI.Button(rect1, "Reset Layout"))
-					settings.ResetLayout(selected);
-			}
-
-			// Refresh button
-			Rect rect = line.SliceOut(110, Side.Right);
-			if (GUI.Button(rect, "Refresh"))
-				ObjectBrowserCache.ClearCache();
-
-			// View switch
-			rect = line.SliceOut(110, Side.Right);
-			if (GUI.Button(rect, settings.SelectedView.ToString()))
-				settings.SelectedView = settings.SelectedView == ObjectsBrowserView.ListView ? ObjectsBrowserView.TableView : ObjectsBrowserView.ListView;
-
-			// Show Prefabs / GameObjects
-			bool isMonoBehaviour = selected != null && selected.IsSubclassOf(typeof(MonoBehaviour));
-			if (isMonoBehaviour)
-			{
-				bool showPrefabs = settings.ShowPrefabs;
-				GUIContent content = new(
-					showPrefabs ? " Prefabs" : " GameObjects",
-					showPrefabs ? prPic : goPic,
-					showPrefabs ? "Show Prefab files in Project" : "Show GameObjects In Scene");
-
-				rect = line.SliceOut(110, Side.Right);
-				if (GUI.Button(rect, content))
-					settings.ShowPrefabs = !showPrefabs;
-			}
 		}
 
 		static void DrawTypeTabs(IReadOnlyList<TypeDisplaySetting> types, Type selected, ObjectBrowserSetting settings, ref Rect fullWindowRect)
@@ -135,7 +92,7 @@ namespace EasyEditor
 			Rect headerRect = fullWindowRect;
 			headerRect.SliceOut(0, Side.Up, addSpace: true);
 			headerRect.SliceOut(0, Side.Left, addSpace: true);
-			Rect actionButtonsRect = headerRect.SliceOut(actionButtonWidth * 4 + spacing * 3, Side.Right);
+			Rect actionButtonsRect = headerRect.SliceOut(actionButtonWidth * 6 + spacing * 6, Side.Right);
 			actionButtonsRect.height = lineHight;
 			float fullWindowWidth = fullWindowRect.width;
 			float availableWidth = headerRect.width;
@@ -147,6 +104,25 @@ namespace EasyEditor
 
 			if (selected == null)
 				GUI.enabled = false;
+
+			// Show Prefabs / GameObjects
+			bool isMonoBehaviour = selected != null && selected.IsSubclassOf(typeof(MonoBehaviour));
+			Rect mbr = actionButtonsRect.SliceOut(actionButtonWidth, Side.Left);
+			if (isMonoBehaviour)
+			{
+				bool showPrefabs = settings.ShowPrefabs;
+				GUIContent content = new(
+					showPrefabs ? prPic : goPic,
+					showPrefabs ? "Show Prefab files in Project" : "Show GameObjects In Scene");
+
+				if (GUI.Button(mbr, content))
+					settings.ShowPrefabs = !showPrefabs;
+			}
+
+			// Refresh button
+			if (GUI.Button(actionButtonsRect.SliceOut(actionButtonWidth, Side.Left), new GUIContent("R", "Refresh")))
+				ObjectBrowserCache.ClearCache();
+
 			if (GUI.Button(actionButtonsRect.SliceOut(actionButtonWidth, Side.Left), new GUIContent("◄", "Step Left Selected Tab")))
 			{
 				settings.MovePinnedTab(selectedTypeSetting, false);
@@ -215,81 +191,15 @@ namespace EasyEditor
 				GUI.skin.button.CalcSize(new GUIContent(name)).x + buttonWidthExtra;
 		}
 
-		void DrawObjectClass(ObjectBrowserSetting settings, TypeDisplaySetting typeDisplaySetting, bool preferFiles, ObjectsBrowserView selectedView, ref Rect fullWindowRect)
+		void DrawObjectClass(ObjectBrowserSetting settings, TypeDisplaySetting typeDisplaySetting, bool preferFiles, ref Rect fullWindowRect)
 		{
 			ObjectBrowserCache.CleanupObjectCache();
 			List<Object> objects = ObjectBrowserCache.GetObjectsByType(typeDisplaySetting.ObjectType, preferFiles);
-
 			ObjectTableDrawer customTableDrawer = ObjectBrowserCache.GetCustomDrawer(typeDisplaySetting.ObjectType);
+			fullWindowRect.SliceOut(2, Side.Down, false);
 
-			scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Width(fullWindowRect.width), GUILayout.Height(fullWindowRect.height));
-			if (selectedView == ObjectsBrowserView.ListView)
-				DrawListView(typeDisplaySetting, objects);
-			else if (selectedView == ObjectsBrowserView.TableView)
-				DrawTableView(settings, typeDisplaySetting, objects, customTableDrawer);
+			//-----
 
-			Type selected = typeDisplaySetting.ObjectType;
-			bool isScriptableObject = selected != null && selected.IsSubclassOf(typeof(ScriptableObject));
-			if (isScriptableObject)
-			{
-				Rect buttonRect = EditorGUILayout.GetControlRect();
-				buttonRect.width = fullWindowRect.width - spacing * 2;
-				buttonRect.x += scrollPosition.x;
-				DrawAddNewItemButton(buttonRect, typeDisplaySetting);
-			}
-			EditorGUILayout.EndScrollView();
-		}
-
-		static void DrawListView(TypeDisplaySetting typeDisplaySetting, List<Object> objects)
-		{
-			for (int i = 0; i < objects.Count; i++)
-			{
-				Object so = objects[i];
-				if (so == null)
-				{
-					Type type = typeDisplaySetting.ObjectType;
-					ObjectBrowserCache.RemoveInstance(type, so);
-					i--;
-				}
-				else
-					DrawFoldObject(objects[i]);
-			}
-		}
-
-		static void DrawFoldObject(Object obj)
-		{
-			bool isOpen = openedObjects.Contains(obj);
-			Rect rect = EditorGUILayout.GetControlRect();
-			Rect foldoutRect = new(0, rect.y, foldoutWidth, rect.height);
-			bool shouldOpen = EditorGUI.Foldout(foldoutRect, isOpen, GUIContent.none);
-			if (shouldOpen && !isOpen)
-				openedObjects.Add(obj);
-			else if (!shouldOpen && isOpen)
-				openedObjects.Remove(obj);
-
-			Rect nameRect = new(foldoutWidth + spacing, rect.y, rect.width - (foldoutWidth + spacing), rect.height);
-			DrawItemName(obj, nameRect, false);
-
-			if (isOpen)
-			{
-				EditorGUI.indentLevel++;
-				SerializedObject serializedObject = new(obj);
-
-				// Draw SerializedObject
-				serializedObject.Update();
-				SerializedProperty property = serializedObject.GetIterator();
-				for (int i = 0; property.NextVisible(i == 0); i++)
-					EditorGUILayout.PropertyField(property, true);
-
-				EditorGUILayout.Space();
-				serializedObject.ApplyModifiedProperties();
-				EditorGUI.indentLevel--;
-			}
-
-		}
-
-		void DrawTableView(ObjectBrowserSetting settings, TypeDisplaySetting typeDisplaySetting, List<Object> objects, ObjectTableDrawer customTableDrawer)
-		{
 			if (objects.Count == 0) return;
 			List<ObjectsBrowserColumn> columns = FindColumns(objects, typeDisplaySetting, customTableDrawer);
 
@@ -304,11 +214,16 @@ namespace EasyEditor
 			if (headerHeight != 0)
 				EditorGUILayout.GetControlRect(GUILayout.Height(headerHeight - SingleLineHeight));
 
-
 			// Draw header
-			const float nameWidth = 200;
+			const float nameWidth = 200;  //TODO: make it dynamic
 			EditorGUILayout.BeginHorizontal();
-			EditorGUILayout.GetControlRect(GUILayout.Width(nameWidth), GUILayout.Height(SingleLineHeight));
+			Rect newItemRect = EditorGUILayout.GetControlRect(GUILayout.Width(nameWidth), GUILayout.Height(SingleLineHeight));
+
+			Type selected = typeDisplaySetting.ObjectType;
+			bool isScriptableObject = selected != null && selected.IsSubclassOf(typeof(ScriptableObject));
+			if (isScriptableObject)
+				DrawAddNewItemButton(newItemRect, typeDisplaySetting);
+
 			for (int i = 0; i < columns.Count; i++)
 			{
 				ObjectsBrowserColumn column = columns[i];
@@ -356,8 +271,9 @@ namespace EasyEditor
 					resizedColumn = -1;
 			}
 			EditorGUILayout.EndHorizontal();
+			fullWindowRect.SliceOut(headerHeight, Side.Up, addSpace: false);
 
-
+			scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Width(fullWindowRect.width), GUILayout.Height(fullWindowRect.height));
 			// Draw objects
 			for (int objI = 0; objI < objects.Count; objI++)
 			{
@@ -368,7 +284,7 @@ namespace EasyEditor
 				SerializedObject serializedObject = new(obj);
 
 				Rect rect = EditorGUILayout.GetControlRect(GUILayout.Width(nameWidth));
-				DrawItemName(obj, rect, true);
+				DrawItemName(obj, rect);
 
 				// Find max height
 				float maxHeigh = 0;
@@ -406,7 +322,29 @@ namespace EasyEditor
 
 				serializedObject.ApplyModifiedProperties();
 				EditorGUILayout.EndHorizontal();
+
+				if(openedObjects.Contains(obj))
+					DrawFullObject(obj);
 			}
+
+			EditorGUILayout.EndScrollView();
+		}
+
+
+		static void DrawFullObject(Object obj)
+		{
+				EditorGUI.indentLevel++;
+				SerializedObject serializedObject = new(obj);
+
+				// Draw SerializedObject
+				serializedObject.Update();
+				SerializedProperty property = serializedObject.GetIterator();
+				for (int i = 0; property.NextVisible(i == 0); i++)
+					EditorGUILayout.PropertyField(property, true);
+
+				EditorGUILayout.Space();
+				serializedObject.ApplyModifiedProperties();
+				EditorGUI.indentLevel--;
 		}
 
 		static List<ObjectsBrowserColumn> FindColumns(List<Object> objects, TypeDisplaySetting setting, ObjectTableDrawer customTableDrawer)
@@ -449,11 +387,11 @@ namespace EasyEditor
 								else
 									typeWidth = defaultPropertyWidth;
 
- 							float nameWidth = GUI.skin.label.CalcSize(label).x + 16;
+							float nameWidth = GUI.skin.label.CalcSize(label).x + 16;
 							width = MathF.Max(nameWidth, typeWidth);
 						}
 
- 						ObjectsBrowserColumn column = new() { propertyName = pName, label = label, width = width };
+						ObjectsBrowserColumn column = new() { propertyName = pName, label = label, width = width };
 						columns.Add(column);
 					}
 				}
@@ -483,22 +421,24 @@ namespace EasyEditor
 			{ "Object", 200 },
 		};
 
-		static void DrawItemName(Object obj, Rect rect, bool selectButtonFirst)
-		{
-			const float selectButtonWidth = 20;
-			Rect nameRect, selectButtonRect;
-			if (selectButtonFirst)
+		static void DrawItemName(Object obj, Rect rect)
+		{ 
+			Rect FoldoutRect = rect.SliceOut(16, Side.Left);
+			Rect selectButtonRect = rect.SliceOut(20, Side.Left);
+
+			bool isOpened = openedObjects.Contains(obj);
+			if (EditorGUI.Foldout(FoldoutRect, isOpened, GUIContent.none) != isOpened)
 			{
-				selectButtonRect = new(rect.x, rect.y, selectButtonWidth, rect.height);
-				nameRect = new(rect.x + selectButtonWidth + spacing, rect.y, rect.width - (selectButtonWidth + spacing), rect.height);
-			}
-			else
-			{
-				nameRect = new(rect.x, rect.y, rect.width - (selectButtonWidth + spacing), rect.height);
-				selectButtonRect = new(rect.xMax - selectButtonWidth, rect.y, selectButtonWidth, rect.height);
+				if (isOpened)
+					openedObjects.Remove(obj);
+				else
+					openedObjects.Add(obj);
 			}
 
-			string newName = EditorGUI.TextField(nameRect, obj.name);
+			if (GUI.Button(selectButtonRect, "→"))
+				Selection.activeObject = obj;
+
+			string newName = EditorGUI.TextField(rect, obj.name);
 			if (newName != obj.name)
 			{
 				EditorUtility.SetDirty(obj);
@@ -507,8 +447,7 @@ namespace EasyEditor
 				obj.name = newName;
 			}
 
-			if (GUI.Button(selectButtonRect, "→"))
-				Selection.activeObject = obj;
+
 		}
 
 		static void DrawAddNewItemButton(Rect rect, TypeDisplaySetting typeSetting)
@@ -524,8 +463,7 @@ namespace EasyEditor
 			}
 
 			bool pathExists = Directory.Exists(_savePath);
-			string warning = "Select a folder or file to create new asset there!";
-			string buttonString = pathExists ? $"Create New:  {_savePath}" : warning;
+			string buttonString = pathExists ? $"Create New Here" : "Open a directory";
 
 			GUI.enabled = pathExists;
 			if (GUI.Button(rect, buttonString))

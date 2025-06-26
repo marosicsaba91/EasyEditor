@@ -17,7 +17,6 @@ namespace EasyEditor
 		[SerializeField] List<TypeDisplaySetting> allTypeInfo = new();
 		[SerializeField] bool isDirty = false;
 		[SerializeField] bool showPrefabs = true;
-		[SerializeField] ObjectsBrowserView selectedView = ObjectsBrowserView.TableView;
 
 		public bool ShowPrefabs
 		{
@@ -25,16 +24,6 @@ namespace EasyEditor
 			set
 			{
 				showPrefabs = value;
-				isDirty = true;
-			}
-		}
-
-		public ObjectsBrowserView SelectedView
-		{
-			get => selectedView;
-			set
-			{
-				selectedView = value;
 				isDirty = true;
 			}
 		}
