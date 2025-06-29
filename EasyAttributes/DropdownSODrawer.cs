@@ -27,7 +27,7 @@ namespace EasyEditor
 
 			ScriptableObject so = property.objectReferenceValue as ScriptableObject;
 
-			List<Object> all = ObjectBrowserCache.GetScriptableObjectsByType(type);
+			List<Object> all = TableViewCache.GetScriptableObjectsByType(type);
 			List<string> names = new();
 			foreach (Object obj in all)
 			{

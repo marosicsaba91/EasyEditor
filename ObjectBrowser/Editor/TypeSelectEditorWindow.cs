@@ -81,13 +81,13 @@ namespace EasyEditor
 		{
 			List<Type> types = new();
 			if (baseType != null)
-				types = ObjectBrowserCache.GetAllNonAbstractSubclassesOf(baseType);
+				types = TableViewCache.GetAllNonAbstractSubclassesOf(baseType);
 			else
 			{
 				if (scriptableObjects)
-					types.AddRange(ObjectBrowserCache.GetAllScriptableTypes());
+					types.AddRange(TableViewCache.GetAllScriptableTypes());
 				if (monoBehaviours)
-					types.AddRange(ObjectBrowserCache.GetAllMonoBehaviourTypes());
+					types.AddRange(TableViewCache.GetAllMonoBehaviourTypes());
 			}
 
 			if (!string.IsNullOrEmpty(search))

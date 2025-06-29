@@ -6,29 +6,16 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-
 namespace EasyEditor
 {
-
 	[Serializable]
-	class ObjectBrowserSetting
+	class TableViewSetting
 	{
 		[SerializeField] string selectedType;
-		[SerializeField] List<TypeDisplaySetting> allTypeInfo = new();
+		[SerializeField] List<TableViewSettingPerType> allTypeInfo = new();
 		[SerializeField] bool isDirty = false;
-		[SerializeField] bool showPrefabs = true;
 
-		public bool ShowPrefabs
-		{
-			get => showPrefabs;
-			set
-			{
-				showPrefabs = value;
-				isDirty = true;
-			}
-		}
-
-		internal void MovePinnedTab(TypeDisplaySetting type, bool right)
+		internal void MovePinnedTab(TableViewSettingPerType type, bool right)
 		{
 			if (allTypeInfo.Count < 2) return;
 			int index = allTypeInfo.FindIndex(x => x.fullTypeName == type.fullTypeName);
@@ -42,7 +29,7 @@ namespace EasyEditor
 			isDirty = true;
 		}
 
-		internal void RemovePinnedTab(TypeDisplaySetting typeDisplaySetting)
+		internal void RemovePinnedTab(TableViewSettingPerType typeDisplaySetting)
 		{
 			int index = allTypeInfo.FindIndex(x => x.fullTypeName == typeDisplaySetting.fullTypeName);
 			if (index == -1) return;
@@ -79,17 +66,17 @@ namespace EasyEditor
 			allTypeInfo.Sort((x, y) => x.typeOrderPriority.CompareTo(y.typeOrderPriority));
 			for (int i = 0; i < allTypeInfo.Count; i++)
 			{
-				TypeDisplaySetting typeSetting = allTypeInfo[i];
+				TableViewSettingPerType typeSetting = allTypeInfo[i];
 				typeSetting.typeOrderPriority = i;
 				allTypeInfo[i] = typeSetting;
 			}
 			isDirty = true;
 		}
 
-		public IReadOnlyList<TypeDisplaySetting> GetPinnedTypesInOrder() =>
+		public IReadOnlyList<TableViewSettingPerType> GetPinnedTypesInOrder() =>
 			allTypeInfo.Where(x => x.isPinned).OrderBy(x => x.typeOrderPriority).ToList();
 
-		public bool TryGetSelectedType(out TypeDisplaySetting typeSetting)
+		public bool TryGetSelectedType(out TableViewSettingPerType typeSetting)
 		{
 			int index = allTypeInfo.FindIndex(x => x.fullTypeName == selectedType);
 			if (index == -1)
@@ -106,7 +93,7 @@ namespace EasyEditor
 			int index = allTypeInfo.FindIndex(x => x.ObjectType == type);
 			if (index == -1)
 			{
-				TypeDisplaySetting setting = new(type);
+				TableViewSettingPerType setting = new(type);
 				allTypeInfo.Add(setting);
 				selectedType = type.FullName;
 				setting.typeOrderPriority = allTypeInfo.Count;
@@ -117,7 +104,7 @@ namespace EasyEditor
 				string typeName = allTypeInfo[index].fullTypeName;
 				if (typeName != selectedType)
 				{
-					TypeDisplaySetting setting = allTypeInfo[index];
+					TableViewSettingPerType setting = allTypeInfo[index];
 					setting.isPinned = true;
 					selectedType = typeName;
 					isDirty = true;
@@ -127,7 +114,7 @@ namespace EasyEditor
 
 		public void ResetLayout(Type selected)
 		{
-			TypeDisplaySetting typeSetting = allTypeInfo.Find(x => x.ObjectType == selected);
+			TableViewSettingPerType typeSetting = allTypeInfo.Find(x => x.ObjectType == selected);
 			if (typeSetting == null) return;
 
 			typeSetting.properties = new();
@@ -138,9 +125,9 @@ namespace EasyEditor
 		// ----------------- Singleton -----------------
 
 		const string settingKey = "ObjectBrowserSetting";
-		static ObjectBrowserSetting instance;
+		static TableViewSetting instance;
 
-		public static ObjectBrowserSetting Instance
+		public static TableViewSetting Instance
 		{
 			get
 			{
@@ -149,7 +136,7 @@ namespace EasyEditor
 					string objectBrowserSettingString = EditorPrefs.GetString(settingKey, null);
 					if (objectBrowserSettingString != null)
 					{
-						instance = JsonUtility.FromJson<ObjectBrowserSetting>(objectBrowserSettingString);
+						instance = JsonUtility.FromJson<TableViewSetting>(objectBrowserSettingString);
 						if (instance != null)
 							return instance;
 						else
@@ -172,75 +159,6 @@ namespace EasyEditor
 		}
 
 		public void SetDirty() => isDirty = true;
-	}
-
-	[Serializable]
-	public class TypeDisplaySetting
-	{
-		public string fullTypeName;
-		public string name;
-		public bool isPinned;
-		public int typeOrderPriority;
-		public string orderingPropertyName;
-		public bool isAscending;
-		public bool showFiles;
-		public List<string> openedObjects;
-		public List<PropertyDisplaySetting> properties;
-
-		Type cachedObjectType;
-		public Type ObjectType
-		{
-			get
-			{
-				if (cachedObjectType != null) return cachedObjectType;
-				if (fullTypeName == null) return null;
-				string n = fullTypeName;
-				cachedObjectType = ObjectBrowserCache.GetAllScriptableTypes().Find(x => x.FullName == n);
-				if (cachedObjectType == null)
-					cachedObjectType = ObjectBrowserCache.GetAllMonoBehaviourTypes().Find(x => x.FullName == n);
-				return cachedObjectType;
-			}
-		}
-
-		public TypeDisplaySetting(Type type)
-		{
-			fullTypeName = type.FullName;
-			cachedObjectType = type;
-			name = type.Name;
-			isPinned = true;
-			showFiles = true;
-			typeOrderPriority = 0;
-			orderingPropertyName = null;
-			isAscending = true;
-			openedObjects = new();
-			properties = new();
-		}
-
-		public bool TryGetPropertySettings(string fullTypeName, string propertyName, out PropertyDisplaySetting pds)
-		{
-			if (properties == null)
-			{
-				pds = default;
-				return false;
-			}
-			pds = properties.Find(x => x.propertyName == propertyName && x.fullTypeName == fullTypeName);
-			return pds != null;
-		}
-
-		public void SetColumnWidth(string fullTypeName, string propertyName, float width)
-		{
-			int index = properties.FindIndex(x => x.propertyName == propertyName && x.fullTypeName == fullTypeName);
-			if (index < 0)
-			{
-				PropertyDisplaySetting pds = new(fullTypeName, propertyName, width);
-				properties.Add(pds);
-			}
-			else
-			{
-				PropertyDisplaySetting pds = properties[index];
-				pds.width = width;
-			}
-		}
 	}
 
 	[Serializable]

@@ -9,7 +9,7 @@ using Object = UnityEngine.Object;
 
 namespace EasyEditor
 {
-	public static class ObjectBrowserCache
+	public static class TableViewCache
 	{
 		static List<Type> allScriptableObjectTypeCached;
 		static List<Type> allMonoBehaviourTypesCached;
@@ -19,7 +19,7 @@ namespace EasyEditor
 		static readonly Dictionary<Type, List<Object>> monoBehaviourScenesCache = new();
 		static readonly Dictionary<Type, List<Object>> monoBehaviourPrefabsCache = new();
 
-		static readonly Dictionary<Type, ObjectTableDrawer> customDrawerCache = new();
+		static readonly Dictionary<Type, TableViewDrawer> customDrawerCache = new();
 
 		public static List<Type> GetAllScriptableTypes()
 		{
@@ -81,7 +81,7 @@ namespace EasyEditor
 			allScriptableObjectTypeCached = new();
 			allMonoBehaviourTypesCached = new();
 
-			Type customDrawerType = typeof(ObjectTableDrawer);
+			Type customDrawerType = typeof(TableViewDrawer);
 
 			foreach (Assembly assembly in GetUserCreatedAssemblies(AppDomain.CurrentDomain))
 				foreach (Type type in assembly.GetTypes())
@@ -99,7 +99,7 @@ namespace EasyEditor
 					{
 						Type genericParameter = type.BaseType.GetGenericArguments()[0];
 						if (!customDrawerCache.ContainsKey(genericParameter))
-							customDrawerCache.Add(genericParameter, (ObjectTableDrawer)Activator.CreateInstance(type));
+							customDrawerCache.Add(genericParameter, (TableViewDrawer)Activator.CreateInstance(type));
 					}
 				}
 		}
@@ -219,8 +219,8 @@ namespace EasyEditor
 			monoBehaviourPrefabsCache.Clear();
 		}
 
-		public static ObjectTableDrawer GetCustomDrawer(Type objectType) =>
-			customDrawerCache.TryGetValue(objectType, out ObjectTableDrawer drawer) ? drawer : null;
+		public static TableViewDrawer GetCustomDrawer(Type objectType) =>
+			customDrawerCache.TryGetValue(objectType, out TableViewDrawer drawer) ? drawer : null;
 	}
 }
 #endif
