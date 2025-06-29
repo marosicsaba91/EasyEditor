@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Xml.Linq;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -20,6 +21,7 @@ namespace EasyEditor
 		static readonly Dictionary<Type, List<Object>> monoBehaviourPrefabsCache = new();
 
 		static readonly Dictionary<Type, TableViewDrawer> customDrawerCache = new();
+		static TableViewDrawer _dummyDrawer;
 
 		public static List<Type> GetAllScriptableTypes()
 		{
@@ -210,7 +212,8 @@ namespace EasyEditor
 				return;
 
 			identifiers.Remove(identifier);
-		}
+
+ 		}
 
 		public static void ClearCache()
 		{
@@ -219,8 +222,16 @@ namespace EasyEditor
 			monoBehaviourPrefabsCache.Clear();
 		}
 
-		public static TableViewDrawer GetCustomDrawer(Type objectType) =>
-			customDrawerCache.TryGetValue(objectType, out TableViewDrawer drawer) ? drawer : null;
+		public static TableViewDrawer GetCustomDrawer(Type objectType)
+		{
+			if (customDrawerCache.TryGetValue(objectType, out TableViewDrawer drawer))
+				return drawer;
+			else
+			{
+				_dummyDrawer ??= new();
+				return _dummyDrawer;
+			}
+		}
 	}
 }
 #endif

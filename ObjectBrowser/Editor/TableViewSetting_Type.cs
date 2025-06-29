@@ -6,19 +6,18 @@ using System.Collections.Generic;
 namespace EasyEditor
 {
 	[Serializable]
-	public class TableViewSettingPerType
+	public class TableViewSetting_Type
 	{
 		public string fullTypeName;
 		public string name;
 		public bool isPinned;
-		public int typeOrderPriority;
 		public string orderingPropertyName;
 		public bool isAscending;
 		public bool showFiles;
 		public bool showPrefabs = true;
 		public float nameWidth = 200;
 		public List<string> openedObjects;
-		public List<PropertyDisplaySetting> properties;
+		public List<TableViewSetting_Column> properties;
 
 		Type cachedObjectType;
 
@@ -36,21 +35,20 @@ namespace EasyEditor
 			}
 		}
 
-		public TableViewSettingPerType(Type type)
+		public TableViewSetting_Type(Type type)
 		{
 			fullTypeName = type.FullName;
 			cachedObjectType = type;
 			name = type.Name;
 			isPinned = true;
 			showFiles = true;
-			typeOrderPriority = 0;
 			orderingPropertyName = null;
 			isAscending = true;
 			openedObjects = new();
 			properties = new();
 		}
 
-		public bool TryGetPropertySettings(string fullTypeName, string propertyName, out PropertyDisplaySetting pds)
+		public bool TryGetColumnSettings(string fullTypeName, string propertyName, out TableViewSetting_Column pds)
 		{
 			if (properties == null)
 			{
@@ -66,12 +64,12 @@ namespace EasyEditor
 			int index = properties.FindIndex(x => x.propertyName == propertyName && x.fullTypeName == fullTypeName);
 			if (index < 0)
 			{
-				PropertyDisplaySetting pds = new(fullTypeName, propertyName, width);
+				TableViewSetting_Column pds = new(fullTypeName, propertyName, width);
 				properties.Add(pds);
 			}
 			else
 			{
-				PropertyDisplaySetting pds = properties[index];
+				TableViewSetting_Column pds = properties[index];
 				pds.width = width;
 			}
 		}

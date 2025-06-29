@@ -14,6 +14,7 @@ namespace EasyEditor
 		public string propertyName;
 		public GUIContent label;
 		public float width;
+		public float priority;
 	}
 
 	class TableViewWindow : EditorWindow
@@ -47,8 +48,19 @@ namespace EasyEditor
 			selectedButtonStyle = new(GUI.skin.button) { fontStyle = FontStyle.Bold, normal = { textColor = new Color(0.5f, 0.7f, 1) } };
 
 			TableViewSetting settings = TableViewSetting.Instance;
+			if (settings == null)
+			{
+				EditorGUILayout.LabelField("TableViewSetting not found! Please create one in the project.");
+				if (GUILayout.Button("Create TableViewSetting"))
+				{
+					settings = CreateInstance<TableViewSetting>();
+					AssetDatabase.CreateAsset(settings, "Assets/TableViewSetting.asset");
+					AssetDatabase.SaveAssets();
+					AssetDatabase.Refresh();
+				}
+				return;
+			}
 			settings.CleanupSetting();
-			IReadOnlyList<TableViewSettingPerType> displayedTypes = settings.GetPinnedTypesInOrder();
 
 			soPic = soPic != null ? soPic : EditorGUIUtility.IconContent("ScriptableObject Icon").image;
 			mbPic = mbPic != null ? mbPic : EditorGUIUtility.IconContent("cs Script Icon").image;
@@ -56,20 +68,18 @@ namespace EasyEditor
 			prPic = prPic != null ? prPic : EditorGUIUtility.IconContent("Prefab Icon").image;
 			newPic = newPic != null ? newPic : EditorGUIUtility.IconContent("CreateAddNew").image;
 
-			bool hasSelected = settings.TryGetSelectedType(out TableViewSettingPerType selectedTypeSetting);
+			bool hasSelected = settings.TryGetSelectedType(out TableViewSetting_Type selectedTypeSetting);
 			Type selectedType = hasSelected ? selectedTypeSetting.ObjectType : null;
 
 			Rect fullWindowRect = position;
 			fullWindowRect.position = Vector2.zero;
-			DraWindowHeader(displayedTypes, selectedType, settings, ref fullWindowRect);
+			DraWindowHeader(settings.AllTypeInfo, selectedType, settings, ref fullWindowRect);
 
 			if (hasSelected)
 				DrawObjectClass(settings, selectedTypeSetting, ref fullWindowRect);
-
-			TableViewSetting.TrySave();
 		}
 
-		static void DraWindowHeader(IReadOnlyList<TableViewSettingPerType> types, Type selected, TableViewSetting settings, ref Rect fullWindowRect)
+		static void DraWindowHeader(IReadOnlyList<TableViewSetting_Type> types, Type selected, TableViewSetting settings, ref Rect fullWindowRect)
 		{
 			const float actionButtonWidth = 26;
 			const float lineHight = 22;
@@ -78,7 +88,7 @@ namespace EasyEditor
 			float fullHeaderWidth = 0;
 			for (int i = 0; i < types.Count; i++)
 			{
-				TableViewSettingPerType typeDisplaySetting = types[i];
+				TableViewSetting_Type typeDisplaySetting = types[i];
 				Type type = typeDisplaySetting.ObjectType;
 				string name = type.Name;
 				float width = GetButtonWidth(name);
@@ -96,7 +106,7 @@ namespace EasyEditor
 
 			EditorHelper.DrawBox(backgroundRect, EditorHelper.buttonBackgroundColor);
 
-			TableViewSettingPerType selectedTypeSetting = types.FirstOrDefault(x => x.ObjectType == selected);
+			TableViewSetting_Type selectedTypeSetting = types.FirstOrDefault(x => x.ObjectType == selected);
 
 			if (selected == null)
 				GUI.enabled = false;
@@ -111,27 +121,20 @@ namespace EasyEditor
 				TableViewCache.ClearCache();
 
 			if (GUI.Button(actionButtonsRect.SliceOut(actionButtonWidth, Side.Left), new GUIContent("◄", "Step Left Selected Tab")))
-			{
 				settings.MovePinnedTab(selectedTypeSetting, false);
-				return;
-			}
+
 			if (GUI.Button(actionButtonsRect.SliceOut(actionButtonWidth, Side.Left), new GUIContent("►", "Step Right Selected Tab")))
-			{
 				settings.MovePinnedTab(selectedTypeSetting, true);
-				return;
-			}
+
 			if (GUI.Button(actionButtonsRect.SliceOut(actionButtonWidth, Side.Left), new GUIContent("✖", "Remove Selected Tab")))
-			{
 				settings.RemovePinnedTab(selectedTypeSetting);
-				return;
-			}
+
 			GUI.enabled = true;
 			if (GUI.Button(actionButtonsRect.SliceOut(actionButtonWidth, Side.Left), new GUIContent(newPic, "Add New Type Tab")))
 			{
 				Type selectedType = TypeSelectEditorWindow.Open();
 				if (selectedType != null)
 					settings.SetSelectedType(selectedType);
-				return;
 			}
 
 			float x = headerRect.x;
@@ -140,7 +143,7 @@ namespace EasyEditor
 
 			for (int i = 0; i < types.Count; i++)
 			{
-				TableViewSettingPerType typeDisplaySetting = types[i];
+				TableViewSetting_Type typeDisplaySetting = types[i];
 				Type type = typeDisplaySetting.ObjectType;
 				string name = type.Name;
 
@@ -178,15 +181,16 @@ namespace EasyEditor
 				GUI.skin.button.CalcSize(new GUIContent(name)).x + buttonWidthExtra;
 		}
 
-		void DrawObjectClass(TableViewSetting settings, TableViewSettingPerType typeDisplaySetting, ref Rect fullWindowRect)
+		void DrawObjectClass(TableViewSetting settings, TableViewSetting_Type typeDisplaySetting, ref Rect fullWindowRect)
 		{
-			EditorGUILayout.Space(2); 
+			EditorGUILayout.Space(2);
 			fullWindowRect.SliceOut(4, Side.Down, false);
 			TableViewCache.CleanupObjectCache();
 
 			List<Object> objects = TableViewCache.GetObjectsByType(typeDisplaySetting.ObjectType, typeDisplaySetting.showPrefabs);
 			TableViewDrawer customTableDrawer = TableViewCache.GetCustomDrawer(typeDisplaySetting.ObjectType);
- 
+			objects.Sort(customTableDrawer.Compare);
+
 			// Calculate Header Size 
 			List<ObjectsBrowserColumn> columns = new();
 			float headerHeight = SingleLineHeight;
@@ -233,12 +237,12 @@ namespace EasyEditor
 			}
 
 			// Draw First Resizer
-			Rect resizeNameRect = headerRect.SliceOut(3, Side.Left, false);
+			Rect resizeNameRect = headerRect.SliceOut(2, Side.Left, false);
 			float newNameW = DrawColumnResizer(resizeNameRect, -1, typeDisplaySetting.nameWidth, minWidth: 100);
 			if (newNameW != typeDisplaySetting.nameWidth)
 			{
 				typeDisplaySetting.nameWidth = newNameW;
-				settings.SetDirty();
+				settings.SetSODirty();
 				Repaint();
 			}
 
@@ -248,7 +252,7 @@ namespace EasyEditor
 				ObjectsBrowserColumn column = columns[i];
 				Rect rect = headerRect.SliceOut(column.width, Side.Left, false);
 				float labelWidth = GUI.skin.label.CalcSize(new GUIContent(column.label)).x;
-
+				rect.x -= 2;
 				if (labelWidth > column.width)
 				{
 					Rect r = new(0, 0, rect.height, rect.width);
@@ -266,13 +270,13 @@ namespace EasyEditor
 				}
 
 				// Resizer
-				Rect resizeRect = headerRect.SliceOut(3, Side.Left, false);
+				Rect resizeRect = (i == columns.Count - 1) ? rect.SliceOut(3, Side.Right, false) : headerRect.SliceOut(3, Side.Left, false);
 				float newW = DrawColumnResizer(resizeRect, i, column.width, minWidth: 16);
-				if(newW != column.width)
+				if (newW != column.width)
 				{
 					typeDisplaySetting.SetColumnWidth(typeDisplaySetting.fullTypeName, column.propertyName, newW);
-					settings.SetDirty();
-					Repaint(); 
+					settings.SetSODirty();
+					Repaint();
 				}
 			}
 			fullWindowRect.SliceOut(headerHeight, Side.Up, addSpace: false);
@@ -320,8 +324,7 @@ namespace EasyEditor
 
 					if (property != null)
 					{
-						if (customTableDrawer == null || !customTableDrawer.OverrideProperty_Base(rect, obj, property, column.propertyName))
-							EditorGUI.PropertyField(rect, property, GUIContent.none, false);
+						customTableDrawer.DrawProperty(rect, obj, property, column.propertyName);
 					}
 				}
 
@@ -338,8 +341,8 @@ namespace EasyEditor
 		float DrawColumnResizer(Rect resizeRect, int index, float columnW, float minWidth)
 		{
 			resizeRect = resizeRect.SliceOut(SingleLineHeight, Side.Down, false);
-			resizeRect.x -= 1;
-			resizeRect.width += 2;
+			resizeRect.x -= 2;
+			resizeRect.width += 1;
 
 			EditorGUI.DrawRect(resizeRect, new Color(0, 0, 0, 0.2f));
 			Vector2 mouse = Event.current.mousePosition;
@@ -350,11 +353,11 @@ namespace EasyEditor
 			}
 			else if (resizedColumn == index && lastMouseX != mouse.x)
 			{
- 				columnW = columnW + mouse.x - lastMouseX;
+				columnW = columnW + mouse.x - lastMouseX;
 				columnW = MathF.Max(columnW, minWidth);
 				lastMouseX = mouse.x;
- 			}
-			else if(Event.current.type == EventType.MouseUp)
+			}
+			else if (Event.current.type == EventType.MouseUp)
 				resizedColumn = -2;
 
 			return columnW;
@@ -376,9 +379,8 @@ namespace EasyEditor
 			EditorGUI.indentLevel--;
 		}
 
-		static List<ObjectsBrowserColumn> FindColumns(List<Object> objects, TableViewSettingPerType setting, TableViewDrawer customTableDrawer)
+		static List<ObjectsBrowserColumn> FindColumns(List<Object> objects, TableViewSetting_Type setting, TableViewDrawer customTableDrawer)
 		{
-			float defaultPropertyWidth = 200;
 
 			List<ObjectsBrowserColumn> columns = new();
 			for (int objI = 0; objI < objects.Count; objI++)
@@ -391,64 +393,60 @@ namespace EasyEditor
 				{
 					string pName = property.name;
 					int index = columns.FindIndex(c => c.propertyName == pName);
-					if (customTableDrawer != null)
+
+					if (!customTableDrawer.ShowScript() && pName == "m_Script")
+						continue;
+
+					if (!customTableDrawer.ShowProperty(pName))
 					{
-						if (!customTableDrawer.ShowScript() && pName == "m_Script")
-							continue;
-						if (customTableDrawer.HideProperty(pName))
-							continue;
+						continue;
 					}
+
 					if (index < 0)
 					{
-						string dataType = property.type;
-						// Find Saved Width 
-
-						GUIContent label = customTableDrawer != null ? customTableDrawer.GetTitle(pName, property.displayName) : new GUIContent(property.displayName);
+						GUIContent label = customTableDrawer.GetTitle(pName, property.displayName);
 
 						float width;
-						if (setting.TryGetPropertySettings(setting.fullTypeName, pName, out PropertyDisplaySetting pds))
+						if (customTableDrawer.OverridePropertyWidth(pName, out float w))
+							width = w;
+						else if (setting.TryGetColumnSettings(setting.fullTypeName, pName, out TableViewSetting_Column pds))
 							width = pds.width;
 						else
-						{
-							if (!typeToWidths.TryGetValue(dataType, out float typeWidth))
-								if (dataType.StartsWith("PPtr<"))
-									typeWidth = 150;
-								else
-									typeWidth = defaultPropertyWidth;
+							width = GetDefaultPropertyWidthByType(property.propertyType);
 
-							float nameWidth = GUI.skin.label.CalcSize(label).x + 16;
-							width = MathF.Max(nameWidth, typeWidth);
-						}
+						float priority = customTableDrawer.GetColumPriority(pName, propI);
 
-						ObjectsBrowserColumn column = new() { propertyName = pName, label = label, width = width };
+						ObjectsBrowserColumn column = new() { propertyName = pName, label = label, width = width, priority = priority };
 						columns.Add(column);
 					}
 				}
 			}
 
+			columns.Sort((a, b) => a.priority.CompareTo(b.priority));
 			return columns;
 		}
 
-		static readonly Dictionary<string, float> typeToWidths = new()
+		static float GetDefaultPropertyWidthByType(SerializedPropertyType type) => type switch
 		{
-			{ "string", 200 },
-			{ "int", 50 },
-			{ "float", 50 },
-			{ "bool", 16 },
-			{ "Vector2", 100 },
-			{ "Vector3", 150 },
-			{ "Vector4", 200 },
-			{ "Vector2Int", 100 },
-			{ "Vector3Int", 150 },
-			{ "Vector4Int", 200 },
-			{ "Quaternion", 200 },
-			{ "Color", 50 },
-			{ "Rect", 100 },
-			{ "Bounds", 100 },
-			{ "AnimationCurve", 100 },
-			{ "Gradient", 100 },
-			{ "Object", 200 },
+
+			SerializedPropertyType.String => 200,
+			SerializedPropertyType.Integer => 50,
+			SerializedPropertyType.Float => 50,
+			SerializedPropertyType.Boolean => 16,
+			SerializedPropertyType.Vector2 => 100,
+			SerializedPropertyType.Vector3 => 150,
+			SerializedPropertyType.Vector4 => 200,
+			SerializedPropertyType.Vector2Int => 100,
+			SerializedPropertyType.Vector3Int => 150,
+			SerializedPropertyType.Quaternion => 200,
+			SerializedPropertyType.Color => 50,
+			SerializedPropertyType.Rect => 100,
+			SerializedPropertyType.Bounds => 100,
+			SerializedPropertyType.AnimationCurve => 100,
+			SerializedPropertyType.ObjectReference => 200,
+			_ => 200
 		};
+
 
 		static void DrawItemName(Object obj, Rect rect)
 		{
@@ -482,7 +480,7 @@ namespace EasyEditor
 
 		}
 
-		static void DrawAddNewItemButton(Rect rect, TableViewSettingPerType typeSetting)
+		static void DrawAddNewItemButton(Rect rect, TableViewSetting_Type typeSetting)
 		{
 			string[] selectionGuids = Selection.assetGUIDs;
 			for (int i = 0; i < selectionGuids.Length; i++)
