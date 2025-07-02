@@ -58,7 +58,7 @@ namespace EasyEditor
 							handleEventType = HandleEvent.LmbRelease;
 						else if (Event.current.button == 1)
 							handleEventType = HandleEvent.RmbRelease;
-						position = ReCalculatePosition(position);
+						position = ReCalculatePosition();
 
 						if (Event.current.mousePosition == _sDragHandleMouseStart)
 						{
@@ -79,7 +79,7 @@ namespace EasyEditor
 				case EventType.MouseDrag:
 					if (GUIUtility.hotControl == id)
 					{
-						position = ReCalculatePosition(position);
+						position = ReCalculatePosition();
 
 						if (Event.current.button == 0)
 							handleEventType = HandleEvent.LmbDrag;
@@ -92,7 +92,7 @@ namespace EasyEditor
 					break;
 
 				case EventType.Repaint:
-					Color currentColour = Handles.color;
+					Color currentColor = Handles.color;
 					Handles.color = (id == GUIUtility.hotControl) ? colorSelected :
 						HandleUtility.nearestControl == id ? focusedColor : color;
 
@@ -105,7 +105,7 @@ namespace EasyEditor
 					capFunction(id, screenPosition, matrixR, handleSize, EventType.Repaint);
 					Handles.matrix = cachedMatrix;
 
-					Handles.color = currentColour;
+					Handles.color = currentColor;
 					break;
 
 				case EventType.Layout:
@@ -118,13 +118,12 @@ namespace EasyEditor
 			return new() { clickPosition = _sDragHandleWorldStart, newPosition = position, handleEvent = handleEventType };
 		}
 
-
-		static Vector3 ReCalculatePosition(Vector3 position)
+		static Vector3 ReCalculatePosition()
 		{
 			_sDragHandleMouseCurrent += new Vector2(Event.current.delta.x, -Event.current.delta.y);
 			Vector3 position2 = Camera.current.WorldToScreenPoint(Handles.matrix.MultiplyPoint(_sDragHandleWorldStart))
 				+ (Vector3)(_sDragHandleMouseCurrent - _sDragHandleMouseStart);
-			position = Handles.matrix.inverse.MultiplyPoint(Camera.current.ScreenToWorldPoint(position2));
+			Vector3 position = Handles.matrix.inverse.MultiplyPoint(Camera.current.ScreenToWorldPoint(position2));
 
 			if (Camera.current.transform.forward == Vector3.forward || Camera.current.transform.forward == -Vector3.forward)
 				position.z = _sDragHandleWorldStart.z;

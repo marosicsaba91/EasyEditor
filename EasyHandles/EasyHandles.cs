@@ -14,7 +14,7 @@ namespace EasyEditor
 		Plane
 	}
 
-	public static partial class EasyHandles
+	public static class EasyHandles
 	{
 		static readonly Color _focusedColorMultiplier = new(0.9f, 0.9f, 0.9f, 0.75f);
 		static readonly Color _colorSelectedMultiplier = new(0.8f, 0.8f, 0.8f, 0.5f);
@@ -93,21 +93,21 @@ namespace EasyEditor
 			sizeMultiplier = 1;
 		}
 
-		public static Vector3 PositionHandle(Vector3 position, Shape shape = Shape.Dot) =>
+		public static Vector3 PositionHandle(Vector3 position, HandleShape shape = HandleShape.Dot) =>
 			PositionHandle(position, Quaternion.identity, shape);
 
-		public static Vector3 PositionHandle(Vector3 position, Vector3 axis, Shape shape)
+		public static Vector3 PositionHandle(Vector3 position, Vector3 axis, HandleShape shape)
 		{
 			return PositionHandle(position, Quaternion.LookRotation(axis), ForcedAxisMode.Line, shape);
 		}
 
-		public static bool TryPositionHandle(Vector3 position, Vector3 axis, Shape shape, out Vector3 result)
+		public static bool TryPositionHandle(Vector3 position, Vector3 axis, HandleShape shape, out Vector3 result)
 		{
 			result = PositionHandle(position, Quaternion.LookRotation(axis), ForcedAxisMode.Line, shape);
 			return position != result;
 		}
 
-		public static Vector3 PositionHandle(Vector3 position, Vector3 axis, ForcedAxisMode mode = ForcedAxisMode.Line, Shape shape = Shape.Cone)
+		public static Vector3 PositionHandle(Vector3 position, Vector3 axis, ForcedAxisMode mode = ForcedAxisMode.Line, HandleShape shape = HandleShape.Cone)
 		{
 			if (mode == ForcedAxisMode.Plane)
 				return PositionHandle(position, Quaternion.LookRotation(axis), mode, shape);
@@ -115,9 +115,17 @@ namespace EasyEditor
 			return PositionHandle(position, Quaternion.LookRotation(axis), mode, shape);
 		}
 
-		public static Vector3 PositionHandle(Vector3 position, Quaternion rotation, Shape shape = Shape.Cube)
+		public static Vector3 PositionHandle(Vector3 position, Quaternion rotation, HandleShape shape = HandleShape.FullPosition)
 		{
 			return PositionHandle(position, rotation, ForcedAxisMode.Non, shape);
+		}
+
+		public static Quaternion RotationHandle(Vector3 position, Quaternion rotation)
+		{
+#if UNITY_EDITOR
+			rotation = Handles.RotationHandle(rotation, position);
+#endif
+			return rotation;
 		}
 
 		public static void DrawLine(Vector3 start, Vector3 end)
@@ -129,14 +137,14 @@ namespace EasyEditor
 
 		// ----------- PRIVATE -------------
 
-		static Vector3 PositionHandle(Vector3 position, Quaternion rotation, ForcedAxisMode mode, Shape shape)
+		static Vector3 PositionHandle(Vector3 position, Quaternion rotation, ForcedAxisMode mode, HandleShape shape)
 		{
 #if UNITY_EDITOR
-			if (shape == Shape.FullPosition)
+			if (shape == HandleShape.FullPosition)
 				position = Handles.PositionHandle(position, rotation);
 			else
 			{
-				if (shape == Shape.SmallPosition)
+				if (shape == HandleShape.SmallPosition)
 					position = SmallPositionHandle(position, rotation, mode);
 				else
 				{
@@ -144,7 +152,7 @@ namespace EasyEditor
 					Color selectedColor = MultiplyColor(color, _colorSelectedMultiplier);
 					Color focusedColor = MultiplyColor(color, _focusedColorMultiplier);
 
-					float offset = shape == Shape.Cone ? 0.5f : 0;
+					float offset = shape == HandleShape.Cone ? 0.5f : 0;
 					position = DrawPositionHandle(
 						position, rotation, shape, mode,
 						color, selectedColor, focusedColor, offset);
@@ -167,7 +175,7 @@ namespace EasyEditor
 				Color c = MultiplyColor(color, dirColor);
 				Color sc = MultiplyColor(c, _colorSelectedMultiplier);
 				Color fc = MultiplyColor(c, _focusedColorMultiplier);
-				return DrawPositionHandle(position, rot, Shape.Cone, ForcedAxisMode.Line, c, sc, fc, 1.5f);
+				return DrawPositionHandle(position, rot, HandleShape.Cone, ForcedAxisMode.Line, c, sc, fc, 1.5f);
 			}
 
 			Color red = new(1, 0.5f, 0.5f);
@@ -179,7 +187,7 @@ namespace EasyEditor
 			Vector3 pz = Arrow(Vector3.forward, blue);
 			Color selectedColor = MultiplyColor(color, _colorSelectedMultiplier);
 			Color focusedColor = MultiplyColor(color, _focusedColorMultiplier);
-			Vector3 p = DrawPositionHandle(position, rotation, Shape.Cube, mode, color, selectedColor, focusedColor);
+			Vector3 p = DrawPositionHandle(position, rotation, HandleShape.Cube, mode, color, selectedColor, focusedColor);
 
 			if (px != position)
 				return px;
@@ -194,7 +202,7 @@ namespace EasyEditor
 		public static HandleEvent LastEvent => _lastEvent;
 
 		static Vector3 DrawPositionHandle(
-			Vector3 position, Quaternion rotation, Shape shape, ForcedAxisMode mode,
+			Vector3 position, Quaternion rotation, HandleShape shape, ForcedAxisMode mode,
 			Color color, Color focusedColor, Color selectedColor, float offset = 0)
 		{
 #if UNITY_EDITOR
@@ -234,22 +242,6 @@ namespace EasyEditor
 
 #endif
 			return position;
-		}
-
-		public static Quaternion RotationHandle(Vector3 position, Quaternion rotation)
-		{
-#if UNITY_EDITOR
-			rotation = Handles.RotationHandle(rotation, position);
-#endif
-			return rotation;
-		}
-
-
-		public static void RecordObject(Object objectToRecord)
-		{
-#if UNITY_EDITOR
-			Undo.RecordObject(objectToRecord, "Handle Changed");
-#endif
 		}
 	}
 }

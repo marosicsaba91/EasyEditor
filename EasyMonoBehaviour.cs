@@ -13,7 +13,7 @@ namespace EasyEditor
 
 	public abstract class EasyMonoBehaviour : MonoBehaviour
 	{
-		public virtual void OnDrawHandles(HandleDrawer drawer) { }
+		public virtual void OnDrawHandles() { }
 	}
 }
 
@@ -34,8 +34,7 @@ namespace EasyEditor.Internal
 
 				if (target is EasyMonoBehaviour handleable)
 				{ 
-					handleable.OnDrawHandles(HandleDrawer.Instance);
-
+					handleable.OnDrawHandles();
 					EasyHandles.ClearSettings();
 				}
 			}
