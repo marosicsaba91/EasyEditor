@@ -93,9 +93,6 @@ namespace EasyEditor
 			sizeMultiplier = 1;
 		}
 
-
-		static void DoNothing() { }
-
 		public static Vector3 PositionHandle(Vector3 position, Shape shape = Shape.Dot) =>
 			PositionHandle(position, Quaternion.identity, shape);
 
@@ -140,7 +137,7 @@ namespace EasyEditor
 			else
 			{
 				if (shape == Shape.SmallPosition)
-					position = DrawSmallPositionHandle(position, rotation, mode);
+					position = SmallPositionHandle(position, rotation, mode);
 				else
 				{
 					Color color = Handles.color;
@@ -157,7 +154,7 @@ namespace EasyEditor
 			return position;
 		}
 
-		static Vector3 DrawSmallPositionHandle(Vector3 position, Quaternion rotation, ForcedAxisMode mode)
+		static Vector3 SmallPositionHandle(Vector3 position, Quaternion rotation, ForcedAxisMode mode)
 		{
 #if UNITY_EDITOR
 			Color color = Handles.color;
@@ -248,7 +245,7 @@ namespace EasyEditor
 		}
 
 
-		public static void RecordObject(UnityEngine.Object objectToRecord)
+		public static void RecordObject(Object objectToRecord)
 		{
 #if UNITY_EDITOR
 			Undo.RecordObject(objectToRecord, "Handle Changed");

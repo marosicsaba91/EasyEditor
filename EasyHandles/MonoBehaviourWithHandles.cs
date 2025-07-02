@@ -8,10 +8,45 @@ namespace EasyEditor
 {
 	public abstract class MonoBehaviourWithHandles : MonoBehaviour
 	{
-		public abstract void OnDrawHandles();
-		public virtual bool DrawHandlesInSelfSpace => false;
+		public abstract void OnDrawHandles(HandleDrawer drawer); 
 	}
 
+	public sealed class HandleDrawer
+	{
+		static HandleDrawer instance;
+		internal static HandleDrawer Instance
+		{
+			get
+			{
+				instance ??= new HandleDrawer();
+				return instance;
+			}
+		}
+
+		public Color Color
+		{
+#if UNITY_EDITOR
+			get => Handles.color;
+#else
+		get => Color.white;
+#endif
+
+
+#if UNITY_EDITOR
+			set => Handles.color = value;
+#else
+		set => Gizmos.color = value;
+#endif
+
+		}
+
+		public Vector3 PositionHandle(Vector3 testPosition, Quaternion identity)
+		{
+#if UNITY_EDITOR
+			return Handles.PositionHandle(testPosition, identity);
+#endif
+		}
+	}
 
 #if UNITY_EDITOR
 	[CustomEditor(typeof(MonoBehaviourWithHandles), true)]
@@ -24,11 +59,8 @@ namespace EasyEditor
 				Undo.RecordObject(monoBehaviour, "HandleChanged");
 
 				if (target is MonoBehaviourWithHandles handleable)
-				{
-					if (handleable.DrawHandlesInSelfSpace)
-						EasyHandles.PushMatrix(monoBehaviour.transform.localToWorldMatrix);
-
-					handleable.OnDrawHandles();
+				{ 
+					handleable.OnDrawHandles(HandleDrawer.Instance);
 
 					EasyHandles.ClearSettings();
 				}
