@@ -15,9 +15,7 @@ namespace EasyEditor
     }
 }
 
-// Property Drawer
-# if UNITY_EDITOR 
-
+# if UNITY_EDITOR
 namespace EasyEditor.Internal
 {
     [CustomPropertyDrawer(typeof(EasyDrawAttribute))]
@@ -25,19 +23,17 @@ namespace EasyEditor.Internal
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (ObjectExtraEditor.extraUIDrawing)
+            if (EasyMonoBehaviourEditor.extraUIDrawing)
                 EditorGUI.PropertyField(position, property, label, true);
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            if (ObjectExtraEditor.extraUIDrawing)
+            if (EasyMonoBehaviourEditor.extraUIDrawing)
                 return EditorGUI.GetPropertyHeight(property, label, true);
             else
                 return -EditorGUIUtility.standardVerticalSpacing;
         }
     }
 }
-
-
 #endif

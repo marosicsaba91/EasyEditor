@@ -6,11 +6,6 @@ using UnityEditor;
 
 namespace EasyEditor
 {
-	public abstract class MonoBehaviourWithHandles : MonoBehaviour
-	{
-		public abstract void OnDrawHandles(HandleDrawer drawer); 
-	}
-
 	public sealed class HandleDrawer
 	{
 		static HandleDrawer instance;
@@ -47,25 +42,4 @@ namespace EasyEditor
 #endif
 		}
 	}
-
-#if UNITY_EDITOR
-	[CustomEditor(typeof(MonoBehaviourWithHandles), true)]
-	public class HandleDrawerMonoBehaviourEditor : UnityEditor.Editor
-	{
-		void OnSceneGUI()
-		{
-			if (target is MonoBehaviour monoBehaviour)
-			{
-				Undo.RecordObject(monoBehaviour, "HandleChanged");
-
-				if (target is MonoBehaviourWithHandles handleable)
-				{ 
-					handleable.OnDrawHandles(HandleDrawer.Instance);
-
-					EasyHandles.ClearSettings();
-				}
-			}
-		}
-	}
-#endif
 }
