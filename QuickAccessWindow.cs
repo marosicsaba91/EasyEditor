@@ -212,8 +212,16 @@ namespace EasyEditor.Internal
 
 		void TryToLoad()
 		{
-			string json = EditorPrefs.GetString(saveKey, default);
-			saveData ??= JsonUtility.FromJson<QuickAccessSaveData>(json);
+			if (!EditorPrefs.HasKey(saveKey))
+			{
+				saveData = new QuickAccessSaveData();
+				return;
+			}
+			else
+			{
+				string json = EditorPrefs.GetString(saveKey, default);
+				saveData ??= JsonUtility.FromJson<QuickAccessSaveData>(json);
+			}
 			saveData.SetupAfterDeserialization();
 		}
 
