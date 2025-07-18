@@ -29,7 +29,7 @@ namespace EasyEditor.Internal
 		int insertIndex = 0;
 		bool insertBelow = false;
 
-		GUIContent deselectContent;
+		//GUIContent deselectContent;
 		GUIContent selectContent;
 		GUIContent grabContent;
 		GUIContent addContent;
@@ -42,13 +42,12 @@ namespace EasyEditor.Internal
 			if (saveData == null)
 				TryToLoad();
 
-			if (deselectContent == null)
+			if (selectContent == null)
 			{
-				deselectContent = new("Deselect", "Deselect the object");
-				selectContent = new("Select", "Select the object");
-				grabContent = new("=", "Grab to reorder list");  // ⇵
-				addContent = new("+", "Pin to Quick Access");
-				removeContent = new("-", "Remove from Quick Access");
+				selectContent = new("", "Select only this object");
+				grabContent = new("=", "Grab to reorder list");
+				addContent = new("Pin", "Pin to Quick Access");
+				removeContent = new("📌", "Pinned. Click to remove from Quick Access");
 			}
 
 			selection.Clear();
@@ -69,16 +68,16 @@ namespace EasyEditor.Internal
 
 		void DrawObject(Rect controlRect, int index, Object obj, List<Rect> grabRects)
 		{
-			Rect addRemoveRect = SliceOut(ref controlRect, right: true, 20);
+			Rect addRemoveRect = SliceOut(ref controlRect, right: true, 35);
 			Rect grabRect = SliceOut(ref controlRect, right: false, 14);
-			Rect selectRect = SliceOut(ref controlRect, right: true, 60);
 			Rect selectToggleRect = SliceOut(ref controlRect, right: false, 14);
+			Rect selectRect = SliceOut(ref controlRect, right: false, 14);
 
 			float a;
 			a = obj != grabbed ? 1 : 0.5f;
 			Color white = new(1, 1, 1, a);
 			Color gray = new(0.5f, 0.5f, 0.5f, a);
-			Color green = new(0.75f, 1f, 0.45f, a);
+			// Color green = new(0.75f, 1f, 0.45f, a);
 
 			GUI.color = white;
 
@@ -89,8 +88,24 @@ namespace EasyEditor.Internal
 				saveData.quickAccess.Insert(index, newObj);
 				TryToSave();
 			}
-
 			bool isSelected = selection.Contains(obj);
+
+			selectRect.RemoveSpace(2, Side.Up);
+			selectRect.RemoveSpace(2, Side.Down);
+			selectRect.RemoveSpace(-4, Side.Left);
+			GUI.color = isSelected ? white : gray;
+			if (GUI.Button(selectRect, selectContent))
+			{
+				if (selection.Count == 1 && selection[0] == obj)
+					Selection.objects = System.Array.Empty<Object>();
+				else
+				{
+					selection.Clear();
+					selection.Add(obj);
+					Selection.objects = selection.ToArray();
+				}
+			}
+
 			if (EditorGUI.Toggle(selectToggleRect, GUIContent.none, isSelected) != isSelected)
 			{
 				if (isSelected)
@@ -100,19 +115,7 @@ namespace EasyEditor.Internal
 				Selection.objects = selection.ToArray();
 			}
 
-			GUI.color = isSelected ? gray : white;
-			if (GUI.Button(selectRect, isSelected ? deselectContent : selectContent))
-			{
-				if (isSelected)
-					selection.Remove(obj);
-				else
-				{
-					selection.Clear();
-					selection.Add(obj);
-				}
-				Selection.objects = selection.ToArray();
-			}
-			GUI.color = white;
+			GUI.color = white; 
 
 			bool isQuickAccess = saveData.quickAccess.Contains(obj);
 			if (isQuickAccess)
@@ -121,7 +124,7 @@ namespace EasyEditor.Internal
 				grabRects.Add(grabRect);
 			}
 
-			GUI.color = isQuickAccess ? white : green;
+			GUI.color = isQuickAccess ? gray : white;
 			if (GUI.Button(addRemoveRect, isQuickAccess ? removeContent : addContent))
 			{
 				if (isQuickAccess)
