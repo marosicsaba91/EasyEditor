@@ -51,19 +51,26 @@ namespace EasyEditor.Internal
 			}
 
 			selection.Clear();
-			pinnedObjects.Clear();
 			selection.AddRange(Selection.objects);
+
+			pinnedObjects.Clear();
 			pinnedObjects.AddRange(saveData.quickAccess);
-			pinnedObjects.AddRange(selection.Where(o => !saveData.quickAccess.Contains(o)));
 
 			scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
 			grabRects.Clear();
+
 			for (int i = 0; i < pinnedObjects.Count; i++)
 				DrawObject(EditorGUILayout.GetControlRect(), i, pinnedObjects[i], grabRects);
 
+			HandleDragAndDrop(GUILayoutUtility.GetLastRect().width, grabRects);
+			
+			EditorGUILayout.Space();
+			selection.RemoveAll(o => saveData.quickAccess.Contains(o));
+			foreach (Object obj in selection)
+				DrawObject(EditorGUILayout.GetControlRect(), -1, obj, grabRects);
+
 			EditorGUILayout.EndScrollView();
 
-			HandleDragAndDrop(GUILayoutUtility.GetLastRect().width, grabRects);
 		}
 
 		void DrawObject(Rect controlRect, int index, Object obj, List<Rect> grabRects)
@@ -71,13 +78,11 @@ namespace EasyEditor.Internal
 			Rect addRemoveRect = SliceOut(ref controlRect, right: true, 35);
 			Rect grabRect = SliceOut(ref controlRect, right: false, 14);
 			Rect selectToggleRect = SliceOut(ref controlRect, right: false, 14);
-			Rect selectRect = SliceOut(ref controlRect, right: false, 14);
 
 			float a;
 			a = obj != grabbed ? 1 : 0.5f;
 			Color white = new(1, 1, 1, a);
 			Color gray = new(0.5f, 0.5f, 0.5f, a);
-			// Color green = new(0.75f, 1f, 0.45f, a);
 
 			GUI.color = white;
 
@@ -88,24 +93,8 @@ namespace EasyEditor.Internal
 				saveData.quickAccess.Insert(index, newObj);
 				TryToSave();
 			}
+
 			bool isSelected = selection.Contains(obj);
-
-			selectRect.RemoveSpace(2, Side.Up);
-			selectRect.RemoveSpace(2, Side.Down);
-			selectRect.RemoveSpace(-4, Side.Left);
-			GUI.color = isSelected ? white : gray;
-			if (GUI.Button(selectRect, selectContent))
-			{
-				if (selection.Count == 1 && selection[0] == obj)
-					Selection.objects = System.Array.Empty<Object>();
-				else
-				{
-					selection.Clear();
-					selection.Add(obj);
-					Selection.objects = selection.ToArray();
-				}
-			}
-
 			if (EditorGUI.Toggle(selectToggleRect, GUIContent.none, isSelected) != isSelected)
 			{
 				if (isSelected)
@@ -210,8 +199,6 @@ namespace EasyEditor.Internal
 			if (insertIndex >= grabRects.Count)
 				insertIndex = grabRects.Count - 1;
 		}
-
-
 
 		void TryToLoad()
 		{
