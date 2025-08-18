@@ -19,6 +19,9 @@ namespace EasyEditor
 		WarningInactive,
 		ErrorInactive,
 
+		DebugOn,
+		DebugOff,
+
 		Right,
 		Left,
 		Up,
@@ -189,6 +192,9 @@ namespace EasyEditor
 			{ IconType.InfoInactive,        new string[]{ "console.infoicon.inactive.sml", "console.infoicon.inactive.sml@2x" }},
 			{ IconType.WarningInactive,     new string[]{ "console.warnicon.inactive.sml", "console.warnicon.inactive.sml@2x" }},
 			{ IconType.ErrorInactive,       new string[]{ "console.erroricon.inactive.sml", "console.erroricon.inactive.sml@2x" }},
+
+			{ IconType.DebugOff,            new string[]{ "DebuggerDisabled", "DebuggerDisabled@2x" }},
+			{ IconType.DebugOn,             new string[]{ "DebuggerAttached", "DebuggerAttached@2x" }},
 
 			{ IconType.Right,               new string[]{ "scrollright_uielements" }},
 			{ IconType.Left,                new string[]{ "scrollleft_uielements" }},
