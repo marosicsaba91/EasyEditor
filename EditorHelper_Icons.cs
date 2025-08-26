@@ -102,9 +102,9 @@ namespace EasyEditor
 
 		Search,
 		X,
+		Lock,
 
 		Unity,
-
 	}
 
 	public enum IconSize
@@ -283,7 +283,8 @@ namespace EasyEditor
 			{ IconType.Texture,             new string[]{ "Texture Icon" }},
 
 			{ IconType.Search,              new string[]{ "Search Icon" }},
-			{ IconType.X,               new string[]{ "CrossIcon" }},
+			{ IconType.X,					new string[]{ "CrossIcon" }},
+			{ IconType.Lock,                new string[]{ "AssemblyLock" }},
 
 			{ IconType.Unity,               new string[]{ "UnityLogo" }},
 		};
