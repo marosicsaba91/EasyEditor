@@ -226,6 +226,9 @@ namespace EasyEditor
 			GL.Vertex3(x, y, 0);
 		}
 
+		public static object AnythingField(Rect position,  object value, GUIContent label, ref bool isExpanded) =>
+			AnythingField(position, value.GetType(), value, label, ref isExpanded);
+
 		public static object AnythingField(Rect position, Type t, object value, GUIContent label, ref bool isExpanded)
 		{
 			if (t == typeof(bool))
