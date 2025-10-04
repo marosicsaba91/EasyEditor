@@ -186,8 +186,5 @@ namespace EasyEditor
 				Side.Right => new Rect(rect.x + amount, rect.y, rect.width, rect.height),
 				_ => rect
 			};
-
-		// Only works for spaces where Y increases upwards
-		public static Rect Shift_NonUI(this Rect rect, float amount, Side side) => rect.Shift(amount, side.SwitchY());
 	}
 }
