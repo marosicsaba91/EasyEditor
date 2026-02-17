@@ -6,9 +6,6 @@ using UnityEditor;
 
 namespace EasyEditor
 {
-
-
-
 	public class EulerAngles : PropertyAttribute
 	{
 
@@ -20,9 +17,9 @@ namespace EasyEditor
 	{
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
-			object o = property?.GetObjectOfProperty();
-			if (o == null || !(o is Quaternion quaternion))
-				return;
+			object o = property?.boxedValue;
+			
+			if (o is not Quaternion quaternion) return;
 
 			Vector3 eulerAngles = quaternion.eulerAngles;
 			Vector3 newEuler = EditorGUI.Vector3Field(position, label, eulerAngles);

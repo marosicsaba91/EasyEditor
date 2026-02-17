@@ -4,8 +4,8 @@ namespace EasyEditor
 {
 	public enum Side
 	{
-		Up,
-		Down,
+		Top,
+		Bottom,
 		Left,
 		Right
 	}
@@ -15,7 +15,7 @@ namespace EasyEditor
 		const float standardVerticalSpacing = 2;
 		const float singleLineHeight = 16;
 
-		public static Side SwitchY(this Side side) => side == Side.Up ? Side.Down : side == Side.Down ? Side.Up : side;
+		public static Side SwitchY(this Side side) => side == Side.Top ? Side.Bottom : side == Side.Bottom ? Side.Top : side;
 
 		public static Rect Combine(this Rect self, Rect other)
 		{
@@ -83,19 +83,19 @@ namespace EasyEditor
 		public static Vector2 BottomPoint(this Rect self) => new(self.center.x, self.yMin);
 
 
-		public static void RemoveOneSpace(this ref Rect self, Side side = Side.Up)
+		public static void RemoveOneSpace(this ref Rect self, Side side = Side.Top)
 		{
 			self.RemoveSpace(standardVerticalSpacing, side);
 		}
 
-		public static void RemoveSpace(this ref Rect self, float space, Side side = Side.Up)
+		public static void RemoveSpace(this ref Rect self, float space, Side side = Side.Top)
 		{
-			if (side is Side.Up)
+			if (side is Side.Top)
 			{
 				self.y += space;
 				self.height -= space;
 			}
-			else if (side is Side.Down)
+			else if (side is Side.Bottom)
 			{
 				self.height -= space;
 			}
@@ -110,29 +110,29 @@ namespace EasyEditor
 			}
 		}
 
-		public static Rect SliceOutLine(this ref Rect self, Side side = Side.Up, bool addSpace = true)
+		public static Rect SliceOutLine(this ref Rect self, Side side = Side.Top, bool addSpace = true)
 			=> self.SliceOut(singleLineHeight, side, addSpace);
 
 		// Only works for UI where Y increases downwards
-		public static Rect SliceOut(this ref Rect self, float pixels, Side side = Side.Up, bool addSpace = true)
+		public static Rect SliceOut(this ref Rect self, float pixels, Side side = Side.Top, bool addSpace = true)
 			=> self.SliceOut(pixels, addSpace ? standardVerticalSpacing : 0, side);
 
 		// Only works for spaces where Y increases upwards
-		public static Rect SliceOut_NonEditor(this ref Rect self, float pixels, Side side = Side.Up, float spacing = 0) =>
+		public static Rect SliceOut_NonEditor(this ref Rect self, float pixels, Side side = Side.Top, float spacing = 0) =>
 			self.SliceOut(pixels, spacing, side.SwitchY());
 
 		// Only works for UI where Y increases downwards
-		public static Rect SliceOut(this ref Rect self, float pixels, float spacing, Side side = Side.Up)
+		public static Rect SliceOut(this ref Rect self, float pixels, float spacing, Side side = Side.Top)
 		{
 			Rect slice = self;
-			if (side is Side.Up or Side.Down)
+			if (side is Side.Top or Side.Bottom)
 			{
 				slice.height = pixels;
 
 				float newHeight = self.height - pixels - spacing;
 				self.height = Mathf.Max(0, newHeight);
 
-				if (side == Side.Down)
+				if (side == Side.Bottom)
 				{
 					if (newHeight < 0)
 						self.y -= newHeight;
@@ -180,8 +180,8 @@ namespace EasyEditor
 		public static Rect Shift(this Rect rect, float amount, Side side) =>
 			side switch
 			{
-				Side.Up => new Rect(rect.x, rect.y - amount, rect.width, rect.height),
-				Side.Down => new Rect(rect.x, rect.y + amount, rect.width, rect.height),
+				Side.Top => new Rect(rect.x, rect.y - amount, rect.width, rect.height),
+				Side.Bottom => new Rect(rect.x, rect.y + amount, rect.width, rect.height),
 				Side.Left => new Rect(rect.x - amount, rect.y, rect.width, rect.height),
 				Side.Right => new Rect(rect.x + amount, rect.y, rect.width, rect.height),
 				_ => rect

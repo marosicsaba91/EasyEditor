@@ -42,7 +42,9 @@ public class TypePickerAttribute : PropertyAttribute
 	{
 		this.forceSmall = forceSmall;
 	}
+
 	public TypePickerAttribute()
 	{
+
 	}
 }

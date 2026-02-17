@@ -50,16 +50,16 @@ namespace EasyEditor.Internal
 	[CustomPropertyDrawer(typeof(RealtiveGroupDisplay))]
 	public class RelativeGroupDisplayDrawer : PropertyDrawer
 	{
-		MonoBehaviour container;
-		RealtiveGroupDisplay target;
+		MonoBehaviour _container;
+		RealtiveGroupDisplay _target;
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
-			if (container == null)
+			if (_container == null)
 			{
 				EditorGUI.LabelField(position, label.text, "RealtiveGroupDisplay should be in a MonoBehaviour.");
 				return;
 			}
-			if (target == null)
+			if (_target == null)
 			{
 				EditorGUI.LabelField(position, label.text, "Something went wrong!");
 				return;
@@ -69,11 +69,11 @@ namespace EasyEditor.Internal
 			property.isExpanded = EditorGUI.Foldout(headerRect, property.isExpanded, label.text);
 			Rect headerMessageRect = headerRect.SliceOut(EditorHelper.ContentWidth(position), Side.Right);
 			Rect researchButtonRect = headerMessageRect.SliceOut(70, Side.Right);
-			string headerMessage = $"Found: {target.relatives.Length} {target.relativeTpye} as {target.relativeCategory}";
+			string headerMessage = $"Found: {_target.relatives.Length} {_target.relativeTpye} as {_target.relativeCategory}";
 			GUI.Label(headerMessageRect, headerMessage);
 			if (GUI.Button(researchButtonRect, "Research"))
 			{
-				target.SetRelatives(container, true);
+				_target.SetRelatives(_container, true);
 				property.serializedObject.ApplyModifiedProperties();
 			}
 			if (!property.isExpanded)
@@ -81,30 +81,30 @@ namespace EasyEditor.Internal
 
 			GUI.enabled = false;
 			position.SliceOut(EditorHelper.LabelWidth, Side.Left);
-			for (int i = 0; i < target.relatives.Length; i++)
+			for (int i = 0; i < _target.relatives.Length; i++)
 			{
 				Rect relativeRect = position.SliceOutLine();
-				EditorGUI.ObjectField(relativeRect, target.relatives[i], target.relativeTpye, true);
+				EditorGUI.ObjectField(relativeRect, _target.relatives[i], _target.relativeTpye, true);
 			}
 			GUI.enabled = true;
 		}
 
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
 		{
-			container = property.GetObjectWithProperty() as MonoBehaviour;
-			target = property.GetObjectOfProperty() as RealtiveGroupDisplay;
+			_container = property.GetObjectWithProperty() as MonoBehaviour;
+			_target = property.GetObjectOfProperty() as RealtiveGroupDisplay;
 
-			if (container == null)
+			if (_container == null)
 				return EditorGUIUtility.singleLineHeight;
 
-			if (target == null)
+			if (_target == null)
 				return EditorGUIUtility.singleLineHeight;
 
-			target.SetRelatives(container, false);
-			if (target.relatives == null || target.relatives.Length == 0 || !property.isExpanded)
+			_target.SetRelatives(_container, false);
+			if (_target.relatives == null || _target.relatives.Length == 0 || !property.isExpanded)
 				return EditorGUIUtility.singleLineHeight;
 
-			return EditorGUIUtility.singleLineHeight * (target.relatives.Length + 1);
+			return EditorGUIUtility.singleLineHeight * (_target.relatives.Length + 1);
 		}
 	}
 

@@ -96,7 +96,7 @@ namespace EasyEditor
 			}
 
 			Rect headerRect = fullWindowRect;
-			headerRect.SliceOut(0, Side.Up, addSpace: true);
+			headerRect.SliceOut(0, Side.Top, addSpace: true);
 			headerRect.SliceOut(0, Side.Left, addSpace: true);
 			Rect actionButtonsRect = headerRect.SliceOut(actionButtonWidth * 5 + spacing * 5, Side.Right);
 			actionButtonsRect.height = lineHight;
@@ -175,7 +175,7 @@ namespace EasyEditor
 			}
 
 			EditorGUILayout.GetControlRect(GUILayout.Height(fullHeaderHeight));
-			fullWindowRect.SliceOut(fullHeaderHeight + spacing * 3, Side.Up, addSpace: false);
+			fullWindowRect.SliceOut(fullHeaderHeight + spacing * 3, Side.Top, addSpace: false);
 
 			static float GetButtonWidth(string name) =>
 				GUI.skin.button.CalcSize(new GUIContent(name)).x + buttonWidthExtra;
@@ -184,7 +184,7 @@ namespace EasyEditor
 		void DrawObjectClass(TableViewSetting settings, TableViewSetting_Type typeDisplaySetting, ref Rect fullWindowRect)
 		{
 			EditorGUILayout.Space(2);
-			fullWindowRect.SliceOut(4, Side.Down, false);
+			fullWindowRect.SliceOut(4, Side.Bottom, false);
 			TableViewCache.CleanupObjectCache();
 
 			List<Object> objects = TableViewCache.GetObjectsByType(typeDisplaySetting.ObjectType, typeDisplaySetting.showPrefabs);
@@ -215,7 +215,7 @@ namespace EasyEditor
 
 			// Draw Main Action
 			Rect headerActionRect = headerRect.SliceOut(typeDisplaySetting.nameWidth, Side.Left);
-			headerActionRect = headerActionRect.SliceOut(SingleLineHeight, Side.Down, false);
+			headerActionRect = headerActionRect.SliceOut(SingleLineHeight, Side.Bottom, false);
 			Type selectedType = typeDisplaySetting.ObjectType;
 			if (selectedType == null) return;
 
@@ -279,7 +279,7 @@ namespace EasyEditor
 					Repaint();
 				}
 			}
-			fullWindowRect.SliceOut(headerHeight, Side.Up, addSpace: false);
+			fullWindowRect.SliceOut(headerHeight, Side.Top, addSpace: false);
 
 			// Draw objects
 
@@ -340,7 +340,7 @@ namespace EasyEditor
 
 		float DrawColumnResizer(Rect resizeRect, int index, float columnW, float minWidth)
 		{
-			resizeRect = resizeRect.SliceOut(SingleLineHeight, Side.Down, false);
+			resizeRect = resizeRect.SliceOut(SingleLineHeight, Side.Bottom, false);
 			resizeRect.x -= 2;
 			resizeRect.width += 1;
 

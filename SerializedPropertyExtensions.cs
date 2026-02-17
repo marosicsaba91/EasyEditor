@@ -11,7 +11,7 @@ using Object = UnityEngine.Object;
 
 namespace EasyEditor
 {
-	public static partial class SerializedPropertyExtensions
+	public static class SerializedPropertyExtensions
 	{
 		public static IEnumerable<SerializedProperty> GetChildren(this SerializedProperty property)
 		{
@@ -106,6 +106,7 @@ namespace EasyEditor
 
 			return obj;
 		}
+		
 		public static object GetObjectOfProperty(this SerializedProperty prop, out Type typeOfResult)
 		{
 			typeOfResult = null;
