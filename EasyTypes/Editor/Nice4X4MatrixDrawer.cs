@@ -26,8 +26,6 @@ namespace EasyEditor
 
 		public static Matrix4x4 Draw(Rect position, GUIContent label, Matrix4x4 matrix, ref bool isExpanded)
 		{
-			// var matrixAttribute = (NiceMatrix4X4Attribute) attribute; 
-
 			Rect foldoutRect = position;
 			foldoutRect.width = EditorGUIUtility.labelWidth;
 			foldoutRect.height = EditorGUIUtility.singleLineHeight;
@@ -36,30 +34,35 @@ namespace EasyEditor
 			GUI.enabled = true;
 			isExpanded = EditorGUI.Foldout(foldoutRect, isExpanded, label);
 			GUI.enabled = enabled;
-
-
-			GUIContent noLabel = GUIContent.none;
+			 
 			position.height = EditorGUIUtility.singleLineHeight;
 			position.x += EditorGUIUtility.labelWidth;
 			position.width -= EditorGUIUtility.labelWidth;
 
-
 			if (isExpanded)
 			{
-				EditorGUI.indentLevel++;
-				matrix.SetRow(0, EditorGUI.Vector4Field(position, noLabel, matrix.GetRow(0)));
-				position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-				matrix.SetRow(1, EditorGUI.Vector4Field(position, noLabel, matrix.GetRow(1)));
-				position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-				matrix.SetRow(2, EditorGUI.Vector4Field(position, noLabel, matrix.GetRow(2)));
-				position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-				matrix.SetRow(3, EditorGUI.Vector4Field(position, noLabel, matrix.GetRow(3)));
-				EditorGUI.indentLevel--;
+				float spacing = 4;
+				float cellWidth = (position.width - spacing * 3) / 4f;
+				float savedLabelWidth = EditorGUIUtility.labelWidth;
+				EditorGUIUtility.labelWidth = 20f;
+
+				for (int row = 0; row < 4; row++)
+				{
+					Vector4 rowVec = matrix.GetRow(row);
+					for (int col = 0; col < 4; col++)
+					{
+						Rect cellRect = new(position.x + col * (cellWidth + spacing), position.y, cellWidth, position.height);
+						rowVec[col] = EditorGUI.FloatField(cellRect, $"{row}/{col}", rowVec[col]);
+					}
+					matrix.SetRow(row, rowVec);
+					position.y += EditorGUIUtility.singleLineHeight + spacing;
+				}
+
+				EditorGUIUtility.labelWidth = savedLabelWidth;
 			}
 			else
 			{
 				string text = GetNiceString(matrix);
-
 				EditorGUI.LabelField(position, text);
 			}
 
@@ -84,15 +87,6 @@ namespace EasyEditor
 				}
 			text += ")";
 			return text;
-		}
-
-		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-		{
-			bool isExpanded = property.isExpanded;
-			float singleLineHeight = EditorGUIUtility.singleLineHeight;
-			float spacing = EditorGUIUtility.standardVerticalSpacing;
-			int lineCount = isExpanded ? 4 : 1;
-			return singleLineHeight * lineCount + spacing * (lineCount - 1);
 		}
 
 		public static float PropertyHeight(bool isExpanded)

@@ -20,7 +20,7 @@ namespace EasyEditor
 		FieldInfo _fieldInfo;
 		PropertyInfo _propertyInfo;
 
-		EasyRangeAttribute _rangeAttribute;
+		RangeAttribute _rangeAttribute;
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
@@ -145,7 +145,7 @@ namespace EasyEditor
 				_serializedObject = property.serializedObject.targetObject;
 
 				FieldInfo infoOfEasyMember = _ownerType.GetField(property.name, EasyEditorUtility.allMembersBindings);
-				_rangeAttribute = Attribute.GetCustomAttribute(infoOfEasyMember, typeof(EasyRangeAttribute)) as EasyRangeAttribute;
+				_rangeAttribute = Attribute.GetCustomAttribute(infoOfEasyMember, typeof(RangeAttribute)) as RangeAttribute;
 			}
 		}
 

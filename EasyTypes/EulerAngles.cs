@@ -13,7 +13,7 @@ namespace EasyEditor
 
 #if UNITY_EDITOR
 	[CustomPropertyDrawer(typeof(EulerAngles))]
-	public class FloatRangeDrawer : PropertyDrawer
+	public class EulerAnglesDrawer : PropertyDrawer
 	{
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
