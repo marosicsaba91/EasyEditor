@@ -3,7 +3,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace EasyEditor
+namespace EasyEditor.Editor
 {
 	[CustomPropertyDrawer(typeof(FlagFieldAttribute))]
 	class FlagFieldDrawerDrawer : PropertyDrawer
