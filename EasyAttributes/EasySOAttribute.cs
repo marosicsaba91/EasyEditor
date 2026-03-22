@@ -202,29 +202,56 @@ namespace EasyEditor
 			}
 
 			if (property.isExpanded && property.objectReferenceValue != null)
-				DrawInlineWithTitle(property, subjectSO, containerSO, isNestedInTarget);
+			{
+				Rect inlineRect = position;
+				inlineRect.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+				DrawInlineWithTitle(inlineRect, property, subjectSO, containerSO, isNestedInTarget);
+			}
 
 			position.y += EditorGUIUtility.standardVerticalSpacing;
 		}
 
-		void DrawInlineWithTitle(SerializedProperty property, ScriptableObject subjectSO, ScriptableObject containerSO, bool isNestedInTarget)
+		void DrawInlineWithTitle(Rect position, SerializedProperty property, ScriptableObject subjectSO, ScriptableObject containerSO, bool isNestedInTarget)
 		{
+			Rect nextRect = position;
 
 			if (isNestedInTarget)
 			{
 				string name = subjectSO.name;
-				string newName = EditorGUILayout.TextField("Name", name);
+				string newName = EditorGUI.TextField(new Rect(nextRect.x, nextRect.y, nextRect.width, EditorGUIUtility.singleLineHeight), "Name", name);
 				if (name != newName)
 				{
 					subjectSO.name = newName;
 					EditorUtility.SetDirty(subjectSO);
 					EditorUtility.SetDirty(containerSO);
 				}
+
+				nextRect.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
 			}
+
 			SerializedObject obj = new(property.objectReferenceValue);
 			SerializedProperty iteratedProperty = obj.GetIterator();
 
-			DrawInline(iteratedProperty);
+			DrawInline(nextRect, iteratedProperty);
+		}
+
+		static void DrawInline(Rect position, SerializedProperty iteratedProperty)
+		{
+			EditorGUI.indentLevel++;
+			bool isNext = iteratedProperty.NextVisible(enterChildren: true);
+			while (isNext)
+			{
+				isNext = iteratedProperty.NextVisible(enterChildren: false);
+				if (!isNext) break;
+
+				float propertyHeight = EditorGUI.GetPropertyHeight(iteratedProperty, includeChildren: true);
+				Rect fieldRect = new(position.x, position.y, position.width, propertyHeight);
+				EditorGUI.PropertyField(fieldRect, iteratedProperty, includeChildren: true);
+				position.y += propertyHeight + EditorGUIUtility.standardVerticalSpacing;
+			}
+
+			iteratedProperty.serializedObject.ApplyModifiedProperties();
+			EditorGUI.indentLevel--;
 		}
 
 		public static void DrawInline
@@ -243,7 +270,7 @@ namespace EasyEditor
 				else
 					EditorGUILayout.PropertyField(iteratedProperty, includeChildren: true);
 			}
-			iteratedProperty.serializedObject. ApplyModifiedProperties();
+			iteratedProperty.serializedObject.ApplyModifiedProperties();
 			EditorGUI.indentLevel--;
 		}
 
@@ -460,7 +487,45 @@ namespace EasyEditor
 			float h = EditorGUIUtility.singleLineHeight;
 
 			if (property.objectReferenceValue != null && property.isExpanded)
-				h += EditorGUIUtility.standardVerticalSpacing * 2;
+			{
+				ScriptableObject containerSO = property.serializedObject.targetObject as ScriptableObject;
+				if (containerSO != null)
+				{
+					h += EditorGUIUtility.standardVerticalSpacing;
+					h += GetInlineHeight(property, containerSO);
+				}
+			}
+
+			return h;
+		}
+
+		static float GetInlineHeight(SerializedProperty property, ScriptableObject containerSO)
+		{
+			float h = 0f;
+
+			ScriptableObject subjectSO = property.objectReferenceValue as ScriptableObject;
+			string subjectPath = AssetDatabase.GetAssetPath(subjectSO);
+			string targetPath = AssetDatabase.GetAssetPath(containerSO);
+			bool isNestedInTarget = !string.IsNullOrEmpty(subjectPath) && subjectPath == targetPath;
+
+			if (isNestedInTarget)
+				h += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+
+			SerializedObject obj = new(property.objectReferenceValue);
+			SerializedProperty iteratedProperty = obj.GetIterator();
+
+			bool isNext = iteratedProperty.NextVisible(enterChildren: true);
+			while (isNext)
+			{
+				isNext = iteratedProperty.NextVisible(enterChildren: false);
+				if (!isNext) break;
+
+				h += EditorGUI.GetPropertyHeight(iteratedProperty, includeChildren: true);
+				h += EditorGUIUtility.standardVerticalSpacing;
+			}
+
+			if (h > 0f)
+				h -= EditorGUIUtility.standardVerticalSpacing;
 
 			return h;
 		}
