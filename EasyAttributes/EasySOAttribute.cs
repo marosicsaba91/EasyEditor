@@ -84,7 +84,6 @@ namespace EasyEditor
 			static void LogTypeError(Rect position, GUIContent label, string type) => EditorGUI.LabelField(position, label.text, $"{type} is Not supported!  Use {nameof(EasySOAttribute)} Attribute only for ScriptableObjects");
 
 			EasySOAttribute easySOAttribute = attribute as EasySOAttribute;
-			bool nesting = easySOAttribute.nesting;
 			bool autoCreate = easySOAttribute.autoCreate;
 			bool inline = easySOAttribute.inline;
 
@@ -95,7 +94,9 @@ namespace EasyEditor
 			}
 
 			ScriptableObject subjectSO = property.GetObjectOfProperty(out Type referencedType) as ScriptableObject;
-			ScriptableObject containerSO = property.serializedObject.targetObject as ScriptableObject;
+			UnityEngine.Object containerObject = property.serializedObject.targetObject;
+			ScriptableObject containerSO = containerObject as ScriptableObject;
+			bool nesting = easySOAttribute.nesting && containerSO != null;
 
 			if (!referencedType.IsSubclassOf(typeof(ScriptableObject)))
 			{
@@ -108,7 +109,7 @@ namespace EasyEditor
 
 			ScriptableObject objectOnSubjectPath = AssetDatabase.LoadAssetAtPath<ScriptableObject>(subjectPath);
 
-			bool isNestedInTarget = subjectPath == targetPath;
+			bool isNestedInTarget = !string.IsNullOrEmpty(subjectPath) && !string.IsNullOrEmpty(targetPath) && subjectPath == targetPath;
 			bool isNested = objectOnSubjectPath != subjectSO;
 
 			// Foldout:
@@ -117,10 +118,7 @@ namespace EasyEditor
 
 			Rect menuButtonRect = header;
 			if (nesting || autoCreate)
-			{
 				menuButtonRect = header.SliceOut(24, Side.Right);
-			}
-
 
 			if (inline)
 			{
@@ -134,12 +132,14 @@ namespace EasyEditor
 
 			EditorGUI.indentLevel++;
 			EditorGUI.BeginProperty(header, label, property);
+			EditorGUI.BeginChangeCheck();
 			EditorGUI.PropertyField(header, property, label, includeChildren: true);
+			bool valueChanged = EditorGUI.EndChangeCheck();
 			EditorGUI.EndProperty();
 			EditorGUI.indentLevel--;
 
-			if (containerSO == null) return;
-
+			if (valueChanged)
+				property.serializedObject.ApplyModifiedProperties();
 
 			if (nesting || autoCreate)  // If draw Menu button
 			{
@@ -153,7 +153,6 @@ namespace EasyEditor
 					leftStyle = new() { alignment = TextAnchor.UpperLeft, fontSize = 9 };
 					rightStyle = new() { alignment = TextAnchor.MiddleRight, fontSize = 10 };
 
-					// Color = Default Label Color
 					leftStyle.normal.textColor = EditorStyles.label.normal.textColor;
 				}
 
@@ -179,7 +178,7 @@ namespace EasyEditor
 					GenericMenu menu = new();
 					if (autoCreate)
 					{
-						AddCreateItemOptions(menu, referencedType, property);
+						AddCreateItemOptions(menu, referencedType, property, containerObject);
 
 						if (menu.GetItemCount() > 0 && nesting)
 							menu.AddSeparator("");
@@ -205,7 +204,13 @@ namespace EasyEditor
 			{
 				Rect inlineRect = position;
 				inlineRect.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+				EditorGUI.BeginChangeCheck();
 				DrawInlineWithTitle(inlineRect, property, subjectSO, containerSO, isNestedInTarget);
+				if (EditorGUI.EndChangeCheck())
+				{
+					MethodInfo onValidate = containerObject.GetType().GetMethod("OnValidate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+					onValidate?.Invoke(containerObject, null);
+				}
 			}
 
 			position.y += EditorGUIUtility.standardVerticalSpacing;
@@ -241,7 +246,7 @@ namespace EasyEditor
 			bool isNext = iteratedProperty.NextVisible(enterChildren: true);
 			while (isNext)
 			{
-				isNext = iteratedProperty.NextVisible(enterChildren: false);
+			 isNext = iteratedProperty.NextVisible(enterChildren: false);
 				if (!isNext) break;
 
 				float propertyHeight = EditorGUI.GetPropertyHeight(iteratedProperty, includeChildren: true);
@@ -374,12 +379,11 @@ namespace EasyEditor
 		}
 
 
-		void AddCreateItemOptions(GenericMenu menu, Type baseType, SerializedProperty property)
+		void AddCreateItemOptions(GenericMenu menu, Type baseType, SerializedProperty property, UnityEngine.Object containerObject)
 		{
-
 			if (!typeToSubType.TryGetValue(baseType, out List<Type> subTypes)) return;
 
-			ScriptableObject targetSO = property.serializedObject.targetObject as ScriptableObject;
+			ScriptableObject targetSO = containerObject as ScriptableObject;
 			if (targetSO != null)
 			{
 				foreach (Type subType in subTypes)
@@ -390,7 +394,7 @@ namespace EasyEditor
 				menu.AddSeparator("");
 
 			foreach (Type subType in subTypes)
-				menu.AddItem(new GUIContent($"Create new {subType} as File"), false, () => Create(subType, targetSO, property));
+			 menu.AddItem(new GUIContent($"Create new {subType} as File"), false, () => Create(subType, containerObject, property));
 
 			static void CreateAndNest(Type type, ScriptableObject container, SerializedProperty property)
 			{
@@ -405,7 +409,7 @@ namespace EasyEditor
 				EditorUtility.SetDirty(container);
 			}
 
-			static void Create(Type type, ScriptableObject container, SerializedProperty property)
+			static void Create(Type type, UnityEngine.Object container, SerializedProperty property)
 			{
 				ScriptableObject newObject = ScriptableObject.CreateInstance(type);
 				newObject.name = type.Name;
@@ -415,7 +419,7 @@ namespace EasyEditor
 				else
 				{
 					path = AssetDatabase.GetAssetPath(container);
-					path = path[..path.LastIndexOf('/')] + "/";
+					path = string.IsNullOrEmpty(path) ? "Assets/" : path[..path.LastIndexOf('/')] + "/";
 				}
 
 				string fullPath = GetUnusedPath(path, type.ToString());
@@ -489,11 +493,8 @@ namespace EasyEditor
 			if (property.objectReferenceValue != null && property.isExpanded)
 			{
 				ScriptableObject containerSO = property.serializedObject.targetObject as ScriptableObject;
-				if (containerSO != null)
-				{
-					h += EditorGUIUtility.standardVerticalSpacing;
-					h += GetInlineHeight(property, containerSO);
-				}
+				h += EditorGUIUtility.standardVerticalSpacing;
+				h += GetInlineHeight(property, containerSO);
 			}
 
 			return h;
@@ -506,7 +507,7 @@ namespace EasyEditor
 			ScriptableObject subjectSO = property.objectReferenceValue as ScriptableObject;
 			string subjectPath = AssetDatabase.GetAssetPath(subjectSO);
 			string targetPath = AssetDatabase.GetAssetPath(containerSO);
-			bool isNestedInTarget = !string.IsNullOrEmpty(subjectPath) && subjectPath == targetPath;
+			bool isNestedInTarget = !string.IsNullOrEmpty(subjectPath) && !string.IsNullOrEmpty(targetPath) && subjectPath == targetPath;
 
 			if (isNestedInTarget)
 				h += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
