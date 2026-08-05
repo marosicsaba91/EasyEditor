@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Assemblies;
 
 namespace EasyEditor
 {
@@ -116,7 +117,7 @@ namespace EasyEditor
 				return;
 
 			Type propertyDrawerType = typeof(PropertyDrawer);
-			IEnumerable<Type> allDrawerTypesInDomain = AppDomain.CurrentDomain.GetAssemblies()
+			IEnumerable<Type> allDrawerTypesInDomain = CurrentAssemblies.GetLoadedAssemblies()
 				.SelectMany(GetTypesSafe)
 				.Where(t => t != null && propertyDrawerType.IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
 

@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Xml.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Assemblies;
 using Object = UnityEngine.Object;
 
 namespace EasyEditor
@@ -108,7 +109,7 @@ namespace EasyEditor
 
 		public static IEnumerable<Assembly> GetUserCreatedAssemblies(AppDomain appDomain)
 		{
-			foreach (Assembly assembly in appDomain.GetAssemblies())
+			foreach (Assembly assembly in CurrentAssemblies.GetLoadedAssemblies())
 			{
 				if (assembly.IsDynamic) continue;
 
@@ -144,7 +145,7 @@ namespace EasyEditor
 		{
 			if (!monoBehaviourScenesCache.TryGetValue(type, out List<Object> objects))
 			{
-				objects = Object.FindObjectsByType(type, FindObjectsInactive.Exclude, FindObjectsSortMode.None).ToList();
+				objects = Object.FindObjectsByType(type, FindObjectsInactive.Exclude).ToList();
 				monoBehaviourScenesCache.Add(type, objects);
 			}
 

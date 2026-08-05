@@ -4,11 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using EasyEditor;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Assemblies;
 
+[AutoStaticsCleanup]
 [CustomPropertyDrawer(typeof(TypePickerAttribute))]
-public class TypePickerDrawer : PropertyDrawer
+public partial class TypePickerDrawer : PropertyDrawer
 {
 	public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 	{
@@ -214,7 +217,7 @@ public class TypePickerDrawer : PropertyDrawer
 		if (_inheritedNonAbstractTypes.TryGetValue(baseType, out List<Type> inherited))
 			return inherited;
 
-		List<Type> inheritedTypes = AppDomain.CurrentDomain.GetAssemblies()
+		List<Type> inheritedTypes = CurrentAssemblies.GetLoadedAssemblies()
 			.SelectMany(s => s.GetTypes())
 			.Where(baseType.IsAssignableFrom)
 			.Where(type => !type.IsAbstract)

@@ -5,7 +5,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-
+using UnityEngine.Assemblies;
 using Object = UnityEngine.Object;
 
 namespace EasyEditor.Internal
@@ -28,7 +28,7 @@ namespace EasyEditor.Internal
 				Type soType = typeof(ScriptableObject);
 				Type mbType = typeof(MonoBehaviour);
 
-				foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+				foreach (Assembly assembly in CurrentAssemblies.GetLoadedAssemblies())
 					foreach (Type type in assembly.GetTypes())
 						if (type != null && type.IsClass && !type.IsAbstract && baseType.IsAssignableFrom(type))
 						{
@@ -57,7 +57,7 @@ namespace EasyEditor.Internal
 
 			// MonoBehaviours In Scene
 			foreach (Type concrete in _concreteMBTypes)
-				foreach (Object obj in FindObjectsByType(concrete, FindObjectsInactive.Include, FindObjectsSortMode.None))
+				foreach (Object obj in FindObjectsByType(concrete, FindObjectsInactive.Include))
 				{
 					MonoBehaviour mb = obj as MonoBehaviour;
 					Transform tr = mb.transform;

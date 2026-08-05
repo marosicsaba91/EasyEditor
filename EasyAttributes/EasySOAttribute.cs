@@ -2,6 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using UnityEngine.Assemblies;
+using Unity.Scripting.LifecycleManagement;
+
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -13,8 +17,8 @@ namespace EasyEditor
 	/// <summary>
 	/// Advanced ScriptableObject Attribute
 	/// </summary>
+	/// 
 	[AttributeUsage(AttributeTargets.Field)]
-
 	public class EasySOAttribute : PropertyAttribute
 	{
 		public bool nesting = true;
@@ -24,8 +28,9 @@ namespace EasyEditor
 
 #if UNITY_EDITOR
 
+	[AutoStaticsCleanup]
 	[CustomPropertyDrawer(typeof(EasySOAttribute))]
-	public class EasySODrawer : PropertyDrawer
+	public partial class EasySODrawer : PropertyDrawer
 	{
 		public enum VerticalDirection
 		{
@@ -41,7 +46,7 @@ namespace EasyEditor
 		static EasySODrawer()
 		{
 			Type soType = typeof(ScriptableObject);
-			foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+			foreach (Assembly assembly in CurrentAssemblies.GetLoadedAssemblies())
 			{
 				foreach (Type type in assembly.GetTypes())
 				{
