@@ -38,37 +38,19 @@ public partial class TypePickerDrawer : PropertyDrawer
 
 			if (label == GUIContent.none || string.IsNullOrEmpty(label.text))
 			{
-
-				if (currentType == null)  // NO Label & NO Type
-				{
-					pickerRect = position;
-					drawProp = false;
-				}
-				else   // NO Label & Type
-				{
-					pickerRect = position.SliceOut(20, Side.Left);
-				}
+				pickerRect = position;
+				drawProp = currentType != null;
 			}
 			else
 			{
-				if (currentType == null)  // Label & NO Type
-				{
-					pickerRect = EditorGUI.PrefixLabel(position, label);
-					drawProp = false;
-				}
-				else     // Label & Type
-				{
-					Rect full = position;
-					int indent = EditorGUI.indentLevel * 15;
-					Rect labelPosition = new(full.x + indent, full.y, EditorGUIUtility.labelWidth - indent, full.height);
-					pickerRect = labelPosition.SliceOut(20, Side.Right);
-				}
+				pickerRect = EditorGUI.PrefixLabel(position, label);
+				drawProp = currentType != null;
 			}
 
 		}
 		
 		DrawTypePicker(pickerRect, property, GUIContent.none, managedReferenceFieldType, att);
-		
+
 		if (drawProp)
 			EditorGUI.PropertyField(position, property, label, includeChildren: true);
 
@@ -103,15 +85,7 @@ public partial class TypePickerDrawer : PropertyDrawer
 		if (currentType == null || !inheritedTypes.Contains(currentType))
 			currentTypeIndex = 0;
 		else
-		{
 			currentTypeIndex = inheritedTypes.IndexOf(currentType) + 1;
-
-			if (!property.IsExpandable() || (attribute != null && attribute.forceSmall))
-			{
-				position.width = 20;
-				position.x -= 20;
-			}
-		}
 
 		TypePickerAttribute.TypeToStringConversion conversion = attribute != null ? attribute.typeToStringConversion : TypePickerAttribute.TypeToStringConversion.ShortName;
 		IEnumerable<string> typeNames = inheritedTypes.Select(t => TypeToString(t, conversion));

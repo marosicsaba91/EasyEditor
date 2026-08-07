@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -17,25 +18,26 @@ namespace EasyEditor
 		public float priority;
 	}
 
+	[NoAutoStaticsCleanup]
 	class TableViewWindow : EditorWindow
 	{
 		const float spacing = 2;
 
-		static readonly List<Object> openedObjects = new();
+		static readonly List<Object> _openedObjects = new();
 		static string _savePath = "ScriptableObjects";
 
-		static Texture soPic;
-		static Texture mbPic;
-		static Texture goPic;
-		static Texture prPic;
-		static Texture newPic;
+		static Texture _soPic;
+		static Texture _mbPic;
+		static Texture _goPic;
+		static Texture _prPic;
+		static Texture _newPic;
 
-		static Vector2 scrollPosition;
-		static GUIStyle selectedButtonStyle;
+		static Vector2 _scrollPosition;
+		static GUIStyle _selectedButtonStyle;
 		static float SingleLineHeight => EditorGUIUtility.singleLineHeight;
 
-		static int resizedColumn = -2; // -1 first column, -2 none
-		static float lastMouseX = 0;
+		static int _resizedColumn = -2; // -1 first column, -2 none
+		static float _lastMouseX = 0;
 
 		[MenuItem("Tools/Table View")]
 		public static void Open()
@@ -45,7 +47,7 @@ namespace EasyEditor
 		}
 		void OnGUI()
 		{
-			selectedButtonStyle = new(GUI.skin.button) { fontStyle = FontStyle.Bold, normal = { textColor = new Color(0.5f, 0.7f, 1) } };
+			_selectedButtonStyle = new(GUI.skin.button) { fontStyle = FontStyle.Bold, normal = { textColor = new Color(0.5f, 0.7f, 1) } };
 
 			TableViewSetting settings = TableViewSetting.Instance;
 			if (settings == null)
@@ -62,11 +64,11 @@ namespace EasyEditor
 			}
 			settings.CleanupSetting();
 
-			soPic = soPic != null ? soPic : EditorGUIUtility.IconContent("ScriptableObject Icon").image;
-			mbPic = mbPic != null ? mbPic : EditorGUIUtility.IconContent("cs Script Icon").image;
-			goPic = goPic != null ? goPic : EditorGUIUtility.IconContent("GameObject Icon").image;
-			prPic = prPic != null ? prPic : EditorGUIUtility.IconContent("Prefab Icon").image;
-			newPic = newPic != null ? newPic : EditorGUIUtility.IconContent("CreateAddNew").image;
+			_soPic = _soPic != null ? _soPic : EditorGUIUtility.IconContent("ScriptableObject Icon").image;
+			_mbPic = _mbPic != null ? _mbPic : EditorGUIUtility.IconContent("cs Script Icon").image;
+			_goPic = _goPic != null ? _goPic : EditorGUIUtility.IconContent("GameObject Icon").image;
+			_prPic = _prPic != null ? _prPic : EditorGUIUtility.IconContent("Prefab Icon").image;
+			_newPic = _newPic != null ? _newPic : EditorGUIUtility.IconContent("CreateAddNew").image;
 
 			bool hasSelected = settings.TryGetSelectedType(out TableViewSetting_Type selectedTypeSetting);
 			Type selectedType = hasSelected ? selectedTypeSetting.ObjectType : null;
@@ -82,27 +84,25 @@ namespace EasyEditor
 		static void DraWindowHeader(IReadOnlyList<TableViewSetting_Type> types, Type selected, TableViewSetting settings, ref Rect fullWindowRect)
 		{
 			const float actionButtonWidth = 26;
-			const float lineHight = 22;
+			const float lineHeight = 22;
 			const float buttonWidthExtra = 100;
 
-			float fullHeaderWidth = 0;
 			for (int i = 0; i < types.Count; i++)
 			{
 				TableViewSetting_Type typeDisplaySetting = types[i];
 				Type type = typeDisplaySetting.ObjectType;
 				string name = type.Name;
-				float width = GetButtonWidth(name);
-				fullHeaderWidth += width;
+				GetButtonWidth(name);
 			}
 
 			Rect headerRect = fullWindowRect;
 			headerRect.SliceOut(0, Side.Top, addSpace: true);
 			headerRect.SliceOut(0, Side.Left, addSpace: true);
 			Rect actionButtonsRect = headerRect.SliceOut(actionButtonWidth * 5 + spacing * 5, Side.Right);
-			actionButtonsRect.height = lineHight;
+			actionButtonsRect.height = lineHeight;
 			float fullWindowWidth = fullWindowRect.width;
 			float availableWidth = headerRect.width;
-			Rect backgroundRect = new(0, 0, fullWindowWidth, lineHight + spacing * 2);
+			Rect backgroundRect = new(0, 0, fullWindowWidth, lineHeight + spacing * 2);
 
 			EditorHelper.DrawBox(backgroundRect, EditorHelper.buttonBackgroundColor);
 
@@ -130,7 +130,7 @@ namespace EasyEditor
 				settings.RemovePinnedTab(selectedTypeSetting);
 
 			GUI.enabled = true;
-			if (GUI.Button(actionButtonsRect.SliceOut(actionButtonWidth, Side.Left), new GUIContent(newPic, "Add New Type Tab")))
+			if (GUI.Button(actionButtonsRect.SliceOut(actionButtonWidth, Side.Left), new GUIContent(_newPic, "Add New Type Tab")))
 			{
 				Type selectedType = TypeSelectEditorWindow.Open();
 				if (selectedType != null)
@@ -139,7 +139,7 @@ namespace EasyEditor
 
 			float x = headerRect.x;
 			float y = headerRect.y;
-			float fullHeaderHeight = lineHight;
+			float fullHeaderHeight = lineHeight;
 
 			for (int i = 0; i < types.Count; i++)
 			{
@@ -151,14 +151,14 @@ namespace EasyEditor
 				if (x + nextWidth > availableWidth)
 				{
 					x = headerRect.x;
-					y += lineHight + spacing;
-					fullHeaderHeight += lineHight + spacing;
-					backgroundRect.y += lineHight + spacing;
+					y += lineHeight + spacing;
+					fullHeaderHeight += lineHeight + spacing;
+					backgroundRect.y += lineHeight + spacing;
 					EditorHelper.DrawBox(backgroundRect, EditorHelper.buttonBackgroundColor);
 				}
 
-				Rect tabRect = new(x, y, GetButtonWidth(name), lineHight);
-				Texture texture = type.IsSubclassOf(typeof(ScriptableObject)) ? soPic : type.IsSubclassOf(typeof(MonoBehaviour)) ? mbPic : prPic;
+				Rect tabRect = new(x, y, GetButtonWidth(name), lineHeight);
+				Texture texture = type.IsSubclassOf(typeof(ScriptableObject)) ? _soPic : type.IsSubclassOf(typeof(MonoBehaviour)) ? _mbPic : _prPic;
 
 				bool isSelected = selected == type;
 				List<Object> objects = TableViewCache.GetObjectsByType(type, typeDisplaySetting.showPrefabs);
@@ -166,7 +166,7 @@ namespace EasyEditor
 
 				if (isSelected)
 					GUI.color = new Color(0.8f, 0.8f, 0.8f);
-				GUIStyle style = isSelected ? selectedButtonStyle : GUI.skin.button;
+				GUIStyle style = isSelected ? _selectedButtonStyle : GUI.skin.button;
 				if (GUI.Button(tabRect, new GUIContent($" {name} ({count})", texture), style))
 					settings.SetSelectedType(type);
 				GUI.color = Color.white;
@@ -210,7 +210,7 @@ namespace EasyEditor
 
 			// Draw Header
 			Rect headerRect = EditorGUILayout.GetControlRect(GUILayout.Width(fullWidth), GUILayout.Height(headerHeight));
-			headerRect.x -= scrollPosition.x;
+			headerRect.x -= _scrollPosition.x;
 			GUIStyle centered = new(GUI.skin.label) { alignment = TextAnchor.LowerCenter };
 
 			// Draw Main Action
@@ -224,8 +224,8 @@ namespace EasyEditor
 				// Prefab / GameObject Switch
 				bool showPrefabs = typeDisplaySetting.showPrefabs;
 				GUIContent content = showPrefabs ?
-					new(" Prefabs", prPic, "Show Prefab files in Project") :
-					new(" GameObjects", goPic, "Show GameObjects In Scene");
+					new(" Prefabs", _prPic, "Show Prefab files in Project") :
+					new(" GameObjects", _goPic, "Show GameObjects In Scene");
 
 				if (GUI.Button(headerActionRect, content))
 					typeDisplaySetting.showPrefabs = !showPrefabs;
@@ -255,8 +255,10 @@ namespace EasyEditor
 				rect.x -= 2;
 				if (labelWidth > column.width)
 				{
-					Rect r = new(0, 0, rect.height, rect.width);
-					r.center = rect.center;
+					Rect r = new(0, 0, rect.height, rect.width)
+					{
+						center = rect.center
+					};
 					headerHeight = MathF.Max(headerHeight, labelWidth);
 
 					Vector2 pivot = rect.center;
@@ -283,7 +285,7 @@ namespace EasyEditor
 
 			// Draw objects
 
-			scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Width(fullWindowRect.width), GUILayout.Height(fullWindowRect.height));
+			_scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition, GUILayout.Width(fullWindowRect.width), GUILayout.Height(fullWindowRect.height));
 			for (int objI = 0; objI < objects.Count; objI++)
 			{
 				Object obj = objects[objI];
@@ -298,6 +300,8 @@ namespace EasyEditor
 				// Find max height
 				float maxHeigh = 0;
 				SerializedProperty[] properties = new SerializedProperty[columns.Count];
+				if (properties == null)
+					throw new ArgumentNullException(nameof(properties));
 				SerializedProperty property;
 				for (int columnI = 0; columnI < columns.Count; columnI++)
 				{
@@ -331,7 +335,7 @@ namespace EasyEditor
 				serializedObject.ApplyModifiedProperties();
 				EditorGUILayout.EndHorizontal();
 
-				if (openedObjects.Contains(obj))
+				if (_openedObjects.Contains(obj))
 					DrawFullObject(obj);
 			}
 
@@ -348,17 +352,17 @@ namespace EasyEditor
 			Vector2 mouse = Event.current.mousePosition;
 			if (Event.current.type == EventType.MouseDown && resizeRect.Contains(mouse))
 			{
-				resizedColumn = index;
-				lastMouseX = mouse.x;
+				_resizedColumn = index;
+				_lastMouseX = mouse.x;
 			}
-			else if (resizedColumn == index && lastMouseX != mouse.x)
+			else if (_resizedColumn == index && _lastMouseX != mouse.x)
 			{
-				columnW = columnW + mouse.x - lastMouseX;
+				columnW = columnW + mouse.x - _lastMouseX;
 				columnW = MathF.Max(columnW, minWidth);
-				lastMouseX = mouse.x;
+				_lastMouseX = mouse.x;
 			}
 			else if (Event.current.type == EventType.MouseUp)
-				resizedColumn = -2;
+				_resizedColumn = -2;
 
 			return columnW;
 		}
@@ -442,29 +446,28 @@ namespace EasyEditor
 			SerializedPropertyType.Color => 50,
 			SerializedPropertyType.Rect => 100,
 			SerializedPropertyType.Bounds => 100,
-			SerializedPropertyType.AnimationCurve => 100,
-			SerializedPropertyType.ObjectReference => 200,
+			SerializedPropertyType.AnimationCurve => 100, 
 			_ => 200
 		};
 
 
 		static void DrawItemName(Object obj, Rect rect)
 		{
-			Rect FoldoutRect = rect.SliceOut(14, Side.Left);
+			Rect foldoutRect = rect.SliceOut(14, Side.Left);
 			Rect selectButtonRect = rect.SliceOut(20, Side.Right);
 
-			bool isOpened = openedObjects.Contains(obj);
-			if (EditorGUI.Foldout(FoldoutRect, isOpened, GUIContent.none) != isOpened)
+			bool isOpened = _openedObjects.Contains(obj);
+			if (EditorGUI.Foldout(foldoutRect, isOpened, GUIContent.none) != isOpened)
 			{
 				if (isOpened)
-					openedObjects.Remove(obj);
+					_openedObjects.Remove(obj);
 				else
-					openedObjects.Add(obj);
+					_openedObjects.Add(obj);
 			}
 
 			bool isSelected = Selection.activeObject == obj;
 			GUIContent selectButtonContent = new("→", "Select this");
-			GUIStyle selectButtonStyle = isSelected ? selectedButtonStyle : GUI.skin.button;
+			GUIStyle selectButtonStyle = isSelected ? _selectedButtonStyle : GUI.skin.button;
 			if (GUI.Toggle(selectButtonRect, isSelected, selectButtonContent, selectButtonStyle) != isSelected)
 				Selection.activeObject = obj;
 
@@ -503,11 +506,14 @@ namespace EasyEditor
 				Type objectType = typeSetting.ObjectType;
 				if (typeof(ScriptableObject).IsAssignableFrom(objectType))
 				{
-					_savePath = _savePath.Replace("Assets/", "");
-					_savePath = _savePath.Replace("Assets\\", "");
-					if (_savePath == "Assets")
-						_savePath = "";
-					GenerateNewScriptableObjectFile(_savePath, objectType);
+					if (_savePath != null)
+					{
+						_savePath = _savePath.Replace("Assets/", "");
+						_savePath = _savePath.Replace("Assets\\", "");
+						if (_savePath == "Assets")
+							_savePath = "";
+						GenerateNewScriptableObjectFile(_savePath, objectType);
+					}
 				}
 				else
 					Debug.LogError("Non ScriptableObjects are Not supported!");
