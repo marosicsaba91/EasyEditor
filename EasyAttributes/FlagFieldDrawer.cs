@@ -6,26 +6,36 @@ using UnityEngine;
 namespace EasyEditor.Editor
 {
 	[CustomPropertyDrawer(typeof(FlagFieldAttribute))]
-	class FlagFieldDrawerDrawer : PropertyDrawer
+	class FlagFieldDrawer : PropertyDrawer
 	{
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
-			Type type = fieldInfo.FieldType;
-			if (type.IsArray)
-				type = type.GetElementType();
-			else if (type.IsGenericType)
-				type = type.GetGenericArguments()[0];
+			Type type = GetEnumType();
 
-			if (!type.IsSubclassOf(typeof(Enum)))
+			if (type is not { IsEnum: true })
 			{
 				EditorGUI.LabelField(position, label.text, "Field should be an Enum");
 				return;
 			}
+			DrawFlagField(position, property, label);
+		}
 
+		Type GetEnumType()
+		{
+			Type type = fieldInfo.FieldType;
+			if (type.IsArray)
+				return type.GetElementType();
+
+			if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(System.Collections.Generic.List<>))
+				return type.GetGenericArguments()[0];
+
+			return type;
+		}
+		
+		static void DrawFlagField(Rect position, SerializedProperty property, GUIContent label)
+		{
 			int oldValueInt = property.enumValueFlag;
-			Enum oldValue = (Enum)Enum.ToObject(type, property.enumValueFlag);
-			Enum newValue = EditorGUI.EnumFlagsField(position, label, oldValue);
-			property.enumValueFlag = Convert.ToInt32(newValue);
+			property.enumValueFlag = EditorGUI.MaskField(position, label, oldValueInt, property.enumDisplayNames);
 
 			if (oldValueInt != property.enumValueFlag)
 				property.serializedObject.ApplyModifiedProperties();

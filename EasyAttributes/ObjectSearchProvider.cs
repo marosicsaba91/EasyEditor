@@ -15,8 +15,8 @@ namespace EasyEditor.Internal
 		Type _baseType;
 		SerializedProperty _property;
 
-		readonly List<Type> _concreteMBTypes = new();
-		readonly List<Type> _concreteSOTypes = new();
+		readonly List<Type> _concreteMbTypes = new();
+		readonly List<Type> _concreteSoTypes = new();
 
 		public void Setup(Type baseType, SerializedProperty property)
 		{
@@ -24,7 +24,7 @@ namespace EasyEditor.Internal
 
 			if (!Equals(baseType, _baseType))
 			{
-				_concreteSOTypes.Clear();
+				_concreteSoTypes.Clear();
 				Type soType = typeof(ScriptableObject);
 				Type mbType = typeof(MonoBehaviour);
 
@@ -33,9 +33,9 @@ namespace EasyEditor.Internal
 						if (type != null && type.IsClass && !type.IsAbstract && baseType.IsAssignableFrom(type))
 						{
 							if (soType.IsAssignableFrom(type))
-								_concreteSOTypes.Add(type);
+								_concreteSoTypes.Add(type);
 							else if (mbType.IsAssignableFrom(type))
-								_concreteMBTypes.Add(type);
+								_concreteMbTypes.Add(type);
 						}
 
 				_baseType = baseType;
@@ -47,7 +47,7 @@ namespace EasyEditor.Internal
 			List<(string, Object)> items = new();
 
 			// ScriptableObjects In Assets		
-			foreach (Type t in _concreteSOTypes)
+			foreach (Type t in _concreteSoTypes)
 				foreach (string guid in AssetDatabase.FindAssets($"t:{t}"))
 				{
 					string path = AssetDatabase.GUIDToAssetPath(guid);
@@ -56,7 +56,7 @@ namespace EasyEditor.Internal
 				}
 
 			// MonoBehaviours In Scene
-			foreach (Type concrete in _concreteMBTypes)
+			foreach (Type concrete in _concreteMbTypes)
 				foreach (Object obj in FindObjectsByType(concrete, FindObjectsInactive.Include))
 				{
 					MonoBehaviour mb = obj as MonoBehaviour;

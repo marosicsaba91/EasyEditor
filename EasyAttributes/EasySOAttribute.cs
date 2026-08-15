@@ -13,11 +13,6 @@ using UnityEditor;
 
 namespace EasyEditor
 {
-
-	/// <summary>
-	/// Advanced ScriptableObject Attribute
-	/// </summary>
-	/// 
 	[AttributeUsage(AttributeTargets.Field)]
 	public class EasySOAttribute : PropertyAttribute
 	{
@@ -28,7 +23,7 @@ namespace EasyEditor
 
 #if UNITY_EDITOR
 
-	[AutoStaticsCleanup]
+	[NoAutoStaticsCleanup]
 	[CustomPropertyDrawer(typeof(EasySOAttribute))]
 	public partial class EasySODrawer : PropertyDrawer
 	{
@@ -39,9 +34,7 @@ namespace EasyEditor
 		}
 
 
-		static readonly Dictionary<Type, List<Type>> typeToSubType = new();
-
-		// Static constructor to initialize the dictionary.
+		static readonly Dictionary<Type, List<Type>> _typeToSubType = new();
 
 		static EasySODrawer()
 		{
@@ -54,10 +47,10 @@ namespace EasyEditor
 					if (!type.IsSubclassOf(soType)) continue;
 
 					// Self:
-					if (!typeToSubType.ContainsKey(type))
-						typeToSubType[type] = new List<Type>();
+					if (!_typeToSubType.ContainsKey(type))
+						_typeToSubType[type] = new List<Type>();
 
-					typeToSubType[type].Add(type);
+					_typeToSubType[type].Add(type);
 
 					// Parents:
 					Type nextType = type;
@@ -67,30 +60,28 @@ namespace EasyEditor
 
 						if (baseType == null) break;
 
-						if (!typeToSubType.ContainsKey(baseType))
-							typeToSubType[baseType] = new List<Type>();
+						if (!_typeToSubType.ContainsKey(baseType))
+							_typeToSubType[baseType] = new List<Type>();
 
-						typeToSubType[baseType].Add(type);
+						_typeToSubType[baseType].Add(type);
 						nextType = baseType;
 					}
 				}
 			}
 		}
 
-		static GUIContent normalSOMenuButtonContent;
-		static GUIContent nestedSOMenuButtonContent;
-		static GUIContent warningSOMenuButtonContent;
-		static GUIStyle centerStyle;
-		static GUIStyle leftStyle;
-		static GUIStyle rightStyle;
+		static GUIContent _normalSoMenuButtonContent;
+		static GUIContent _nestedSoMenuButtonContent;
+		static GUIContent _warningSoMenuButtonContent;
+		static GUIStyle _centerStyle;
+		static GUIStyle _leftStyle;
+		static GUIStyle _rightStyle;
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
-			static void LogTypeError(Rect position, GUIContent label, string type) => EditorGUI.LabelField(position, label.text, $"{type} is Not supported!  Use {nameof(EasySOAttribute)} Attribute only for ScriptableObjects");
-
 			EasySOAttribute easySOAttribute = attribute as EasySOAttribute;
-			bool autoCreate = easySOAttribute.autoCreate;
-			bool inline = easySOAttribute.inline;
+			bool autoCreate = easySOAttribute is { autoCreate: true };
+			bool inline = easySOAttribute is { inline: true };
 
 			if (property.propertyType != SerializedPropertyType.ObjectReference)
 			{
@@ -101,7 +92,7 @@ namespace EasyEditor
 			ScriptableObject subjectSO = property.GetObjectOfProperty(out Type referencedType) as ScriptableObject;
 			UnityEngine.Object containerObject = property.serializedObject.targetObject;
 			ScriptableObject containerSO = containerObject as ScriptableObject;
-			bool nesting = easySOAttribute.nesting && containerSO != null;
+			bool nesting = easySOAttribute is { nesting: true } && containerSO != null;
 
 			if (!referencedType.IsSubclassOf(typeof(ScriptableObject)))
 			{
@@ -148,23 +139,23 @@ namespace EasyEditor
 
 			if (nesting || autoCreate)  // If draw Menu button
 			{
-				if (normalSOMenuButtonContent == null)
+				if (_normalSoMenuButtonContent == null)
 				{
-					normalSOMenuButtonContent = new(EditorHelper.GetIcon(IconType.ScriptableObject, IconSize.Small), "ScriptableObject Menu");
-					nestedSOMenuButtonContent = new(EditorHelper.GetIcon(IconType.ScriptableObject, IconSize.Small), "ScriptableObject Nested in this asset");
-					warningSOMenuButtonContent = new(EditorHelper.GetIcon(IconType.Warning, IconSize.Small), "ScriptableObject Nested in another Asset File");
+					_normalSoMenuButtonContent = new(EditorHelper.GetIcon(IconType.ScriptableObject, IconSize.Small), "ScriptableObject Menu");
+					_nestedSoMenuButtonContent = new(EditorHelper.GetIcon(IconType.ScriptableObject, IconSize.Small), "ScriptableObject Nested in this asset");
+					_warningSoMenuButtonContent = new(EditorHelper.GetIcon(IconType.Warning, IconSize.Small), "ScriptableObject Nested in another Asset File");
 
-					centerStyle = new() { alignment = TextAnchor.MiddleCenter, fontSize = 10 };
-					leftStyle = new() { alignment = TextAnchor.UpperLeft, fontSize = 9 };
-					rightStyle = new() { alignment = TextAnchor.MiddleRight, fontSize = 10 };
+					_centerStyle = new() { alignment = TextAnchor.MiddleCenter, fontSize = 10 };
+					_leftStyle = new() { alignment = TextAnchor.UpperLeft, fontSize = 9 };
+					_rightStyle = new() { alignment = TextAnchor.MiddleRight, fontSize = 10 };
 
-					leftStyle.normal.textColor = EditorStyles.label.normal.textColor;
+					_leftStyle.normal.textColor = EditorStyles.label.normal.textColor;
 				}
 
 				GUIContent menuButtonContent =
-					(isNested && !isNestedInTarget) ? warningSOMenuButtonContent :
-					isNestedInTarget ? nestedSOMenuButtonContent :
-					normalSOMenuButtonContent;
+					(isNested && !isNestedInTarget) ? _warningSoMenuButtonContent :
+					isNestedInTarget ? _nestedSoMenuButtonContent :
+					_normalSoMenuButtonContent;
 
 				bool onClick = GUI.Button(menuButtonRect, GUIContent.none);
 
@@ -174,9 +165,9 @@ namespace EasyEditor
 				menuButtonRect.x += 1;
 				menuButtonRect.width -= 2;
 
-				GUI.Label(menuButtonRect, menuButtonContent, (isNested && isNestedInTarget) ? rightStyle : centerStyle);
+				GUI.Label(menuButtonRect, menuButtonContent, (isNested && isNestedInTarget) ? _rightStyle : _centerStyle);
 				if (isNested && isNestedInTarget)
-					GUI.Label(menuButtonRect, "N", leftStyle);
+					GUI.Label(menuButtonRect, "N", _leftStyle);
 
 				if (onClick)
 				{
@@ -219,6 +210,9 @@ namespace EasyEditor
 			}
 
 			position.y += EditorGUIUtility.standardVerticalSpacing;
+			return;
+
+			static void LogTypeError(Rect position, GUIContent label, string type) => EditorGUI.LabelField(position, label.text, $"{type} is Not supported!  Use {nameof(EasySOAttribute)} Attribute only for ScriptableObjects");
 		}
 
 		void DrawInlineWithTitle(Rect position, SerializedProperty property, ScriptableObject subjectSO, ScriptableObject containerSO, bool isNestedInTarget)
@@ -290,7 +284,6 @@ namespace EasyEditor
 			Rect counterRect = headerRect.SliceOut(80, Side.Right);
 
 			SerializedProperty arrayProperty = property.Copy();
-			int arraySize = property.arraySize;
 
 			// Foldout
 			bool isExpanded = EditorGUI.Foldout(headerRect, property.isExpanded, GUIContent.none, true);
@@ -314,7 +307,7 @@ namespace EasyEditor
 			EditorGUI.PropertyField(counterRect, property, includeChildren: false);
 			EditorGUI.EndProperty();
 
-			arraySize = arrayProperty.arraySize;
+			int arraySize = arrayProperty.arraySize;
 
 			EditorGUIUtility.labelWidth = originalLabelWidth;
 			EditorGUI.indentLevel = originalIndent;
@@ -386,7 +379,7 @@ namespace EasyEditor
 
 		void AddCreateItemOptions(GenericMenu menu, Type baseType, SerializedProperty property, UnityEngine.Object containerObject)
 		{
-			if (!typeToSubType.TryGetValue(baseType, out List<Type> subTypes)) return;
+			if (!_typeToSubType.TryGetValue(baseType, out List<Type> subTypes)) return;
 
 			ScriptableObject targetSO = containerObject as ScriptableObject;
 			if (targetSO != null)

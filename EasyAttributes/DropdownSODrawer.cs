@@ -2,14 +2,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace EasyEditor
 {
+	
+	[NoAutoStaticsCleanup]
 	[CustomPropertyDrawer(typeof(DropdownSOAttribute))]
-	class DropdownSODrawer : PropertyDrawer
+	class DropdownSoDrawer : PropertyDrawer
 	{
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
@@ -19,7 +22,7 @@ namespace EasyEditor
 			else if (type.IsGenericType)
 				type = type.GetGenericArguments()[0];
 
-			if (!type.IsSubclassOf(typeof(ScriptableObject)))
+			if (type != null && !type.IsSubclassOf(typeof(ScriptableObject)))
 			{
 				EditorGUI.LabelField(position, label.text, "Field should be subclass of ScriptableObject");
 				return;

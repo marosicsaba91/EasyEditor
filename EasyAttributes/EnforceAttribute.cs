@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEditor.Experimental.GraphView;
 
@@ -29,9 +30,10 @@ namespace EasyEditor.Internal
 {
 	[CustomPropertyDrawer(typeof(EnforceAttribute))]
 
+	[NoAutoStaticsCleanup]
 	public class TypeCheckDrawer : PropertyDrawer
 	{
-		static ObjectSearchProvider searchProvider;
+		static ObjectSearchProvider _searchProvider;
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
@@ -52,11 +54,11 @@ namespace EasyEditor.Internal
 
 				if (GUI.Button(slice, GUIContent.none))
 				{
-					if (searchProvider == null)
-						searchProvider = ScriptableObject.CreateInstance<ObjectSearchProvider>();
+					if (_searchProvider == null)
+						_searchProvider = ScriptableObject.CreateInstance<ObjectSearchProvider>();
 
-					searchProvider.Setup(enforcedType, property);
-					SearchWindow.Open(new SearchWindowContext(GUIUtility.GUIToScreenPoint(Event.current.mousePosition)), searchProvider);
+					_searchProvider.Setup(enforcedType, property);
+					SearchWindow.Open(new SearchWindowContext(GUIUtility.GUIToScreenPoint(Event.current.mousePosition)), _searchProvider);
 					Event.current.Use();
 				}
 				obj = EditorGUI.ObjectField(full, label, obj, enforcedType, true);
