@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Unity.Scripting.LifecycleManagement;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -20,11 +21,12 @@ namespace EasyEditor
 #if UNITY_EDITOR
 namespace EasyEditor.Internal
 {
+	[NoAutoStaticsCleanup]
 	[CustomEditor(typeof(EasyMonoBehaviour), true), CanEditMultipleObjects]
 	public class EasyMonoBehaviourEditor : UnityEditor.Editor
 	{
 		readonly List<DrawableMember> _extraMembersToDraw = new();
-		public static bool extraUIDrawing;
+		public static bool extraUIDrawing = true;
 
 		void OnSceneGUI()
 		{
