@@ -1,4 +1,5 @@
-﻿using UnityEngine; 
+﻿using Unity.Scripting.LifecycleManagement;
+using UnityEngine; 
 
 
 #if UNITY_EDITOR
@@ -14,6 +15,7 @@ namespace EasyEditor
 		Plane
 	}
 
+	[NoAutoStaticsCleanup]
 	public static class EasyHandles
 	{
 		static readonly Color _focusedColorMultiplier = new(0.9f, 0.9f, 0.9f, 0.75f);

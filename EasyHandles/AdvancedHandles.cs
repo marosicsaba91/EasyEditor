@@ -1,10 +1,12 @@
 ﻿#if UNITY_EDITOR
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 
 namespace EasyEditor
 {
-	public class AdvancedHandles
+	[NoAutoStaticsCleanup]
+	public static class AdvancedHandles
 	{
 		static readonly int _sDragHandleHash = "DragHandleHash".GetHashCode();
 		static Vector2 _sDragHandleMouseStart;

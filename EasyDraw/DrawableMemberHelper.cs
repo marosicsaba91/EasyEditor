@@ -5,9 +5,11 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using System;
+using Unity.Scripting.LifecycleManagement;
 
 namespace EasyEditor.Internal
 {
+	[NoAutoStaticsCleanup]
 	static class DrawableMemberHelper
 	{
 		public static bool extraUIDrawing;

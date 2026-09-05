@@ -6,6 +6,7 @@ using System.Reflection;
 using EasyEditor;
 using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
+using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.Assemblies;
 
@@ -13,6 +14,8 @@ using UnityEngine.Assemblies;
 [CustomPropertyDrawer(typeof(TypePickerAttribute))]
 public partial class TypePickerDrawer : PropertyDrawer
 {
+	static EditorWindow _openDropdownWindow;
+
 	public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 	{
 		TypePickerAttribute att = attribute as TypePickerAttribute;
@@ -49,11 +52,16 @@ public partial class TypePickerDrawer : PropertyDrawer
 
 		}
 		
-		DrawTypePicker(pickerRect, property, GUIContent.none, managedReferenceFieldType, att);
+		bool pickerClicked = Event.current.type == EventType.MouseDown &&
+			Event.current.button == 0 && pickerRect.Contains(Event.current.mousePosition);
+		if (pickerClicked)
+			DrawTypePicker(pickerRect, property, GUIContent.none, managedReferenceFieldType, att);
 
 		if (drawProp)
 			EditorGUI.PropertyField(position, property, label, includeChildren: true);
 
+		if (!pickerClicked)
+			DrawTypePicker(pickerRect, property, GUIContent.none, managedReferenceFieldType, att);
 	}
 
 	public static void DrawTypePicker(
@@ -68,8 +76,6 @@ public partial class TypePickerDrawer : PropertyDrawer
 		position.height = EditorGUIUtility.singleLineHeight;
 		List<Type> inheritedTypes = GetInheritedNonAbstractTypes(managedReferenceFieldType);
 
-		int currentTypeIndex;
-
 		if (label != GUIContent.none)
 		{
 			float labelWidth = GUI.skin.label.CalcSize(label).x;
@@ -82,45 +88,128 @@ public partial class TypePickerDrawer : PropertyDrawer
 		if (disabledTypesTypes != null && disabledTypesTypes.Count > 0)
 			inheritedTypes = inheritedTypes.Where(type => !disabledTypesTypes.Contains(type)).ToList();
 
-		if (currentType == null || !inheritedTypes.Contains(currentType))
-			currentTypeIndex = 0;
-		else
-			currentTypeIndex = inheritedTypes.IndexOf(currentType) + 1;
-
-		TypePickerAttribute.TypeToStringConversion conversion = attribute != null ? attribute.typeToStringConversion : TypePickerAttribute.TypeToStringConversion.ShortName;
-		IEnumerable<string> typeNames = inheritedTypes.Select(t => TypeToString(t, conversion));
-		string[] options = new[] { "- Select Type -" }.Concat(typeNames).ToArray();
+		TypePickerAttribute.TypeToStringConversion conversion = attribute?.typeToStringConversion ?? TypePickerAttribute.TypeToStringConversion.ShortName;
+		inheritedTypes = inheritedTypes
+			.OrderBy(type => TypeToString(type, conversion), StringComparer.OrdinalIgnoreCase)
+			.ToList();
 
 		int tempIndent = EditorGUI.indentLevel;
 		EditorGUI.indentLevel = 0;
 
-		int resultTypeIndex = EditorGUI.Popup(position, currentTypeIndex, options);
+		GUIContent buttonContent = new(TypeToString(currentType, conversion));
+		if (EditorGUI.DropdownButton(position, buttonContent, FocusType.Keyboard))
+		{
+			if (!ReferenceEquals(_openDropdownWindow, null))
+			{
+				if (_openDropdownWindow != null)
+					_openDropdownWindow.Close();
+				ClearOpenDropdownWindow();
+				return;
+			}
+
+			TypeDropdown dropdown = new(new AdvancedDropdownState(), inheritedTypes, conversion, selectedType =>
+			{
+				ClearOpenDropdownWindow();
+				if (selectedType == currentType) return;
+				SetManagedReferenceType(property, selectedType);
+			});
+			dropdown.Show(position);
+			EditorWindow focusedWindow = EditorWindow.focusedWindow;
+			if (focusedWindow != null && focusedWindow.GetType().Name == "AdvancedDropdownWindow")
+			{
+				_openDropdownWindow = focusedWindow;
+				EditorApplication.update += ClearDestroyedDropdownWindow;
+			}
+		}
 
 		EditorGUI.indentLevel = tempIndent;
+	}
 
-		if (resultTypeIndex != currentTypeIndex)
+	static void ClearDestroyedDropdownWindow()
+	{
+		if (!ReferenceEquals(_openDropdownWindow, null) && _openDropdownWindow == null)
+			ClearOpenDropdownWindow();
+	}
+
+	static void ClearOpenDropdownWindow()
+	{
+		_openDropdownWindow = null;
+		EditorApplication.update -= ClearDestroyedDropdownWindow;
+	}
+
+	static void SetManagedReferenceType(SerializedProperty property, Type selectedType)
+	{
+		Undo.RecordObject(property.serializedObject.targetObject, "Reference Type Changed");
+		if (selectedType == null)
 		{
-			Undo.RecordObject(property.serializedObject.targetObject, "Reference Type Changed");
-			if (resultTypeIndex == 0)
+			property.managedReferenceValue = null;
+		}
+		else
+		{
+			if (selectedType.IsSubclassOf(typeof(UnityEngine.Object)))
 			{
-				property.managedReferenceValue = null;
+				Debug.LogWarning("SerializedReference don't work with UnityEngine.Object types");
 			}
 			else
 			{
-				Type newType = inheritedTypes[resultTypeIndex - 1];
-				if (newType.IsSubclassOf(typeof(UnityEngine.Object)))
+				object newInstance = Activator.CreateInstance(selectedType);
+				TrySetupProperties(property, newInstance, selectedType);
+				property.managedReferenceValue = newInstance;
+			}
+		}
+
+		property.serializedObject.ApplyModifiedProperties();
+	}
+
+	sealed class TypeDropdown : AdvancedDropdown
+	{
+		readonly IReadOnlyList<Type> _types;
+		readonly TypePickerAttribute.TypeToStringConversion _conversion;
+		readonly Action<Type> _onSelected;
+
+		public TypeDropdown(
+			AdvancedDropdownState state,
+			IReadOnlyList<Type> types,
+			TypePickerAttribute.TypeToStringConversion conversion,
+			Action<Type> onSelected) : base(state)
+		{
+			_types = types;
+			_conversion = conversion;
+			_onSelected = onSelected;
+			minimumSize = new(280, 320);
+		}
+
+		protected override AdvancedDropdownItem BuildRoot()
+		{
+			AdvancedDropdownItem root = new("Select Type");
+			root.AddChild(new TypeDropdownItem("None", null)); // { icon = EditorGUIUtility.IconContent("d_winbtn_win_close").image as Texture2D });
+
+			foreach (Type type in _types)
+			{
+				TypeDropdownItem item = new(TypeToString(type, _conversion), type)
 				{
-					Debug.LogWarning("SerializedReference don't work with UnityEngine.Object types");
-				}
-				else
-				{
-					object newInstance = Activator.CreateInstance(newType);
-					TrySetupProperties(property, newInstance, newType);
-					property.managedReferenceValue = newInstance;
-				}
+					icon = EditorGUIUtility.IconContent("cs Script Icon").image as Texture2D
+				};
+				root.AddChild(item);
 			}
 
-			property.serializedObject.ApplyModifiedProperties();
+			return root;
+		}
+
+		protected override void ItemSelected(AdvancedDropdownItem item)
+		{
+			if (item is TypeDropdownItem typeItem)
+				_onSelected(typeItem.Type);
+		}
+	}
+
+	sealed class TypeDropdownItem : AdvancedDropdownItem
+	{
+		public Type Type { get; }
+
+		public TypeDropdownItem(string name, Type type) : base(name)
+		{
+			Type = type;
 		}
 	}
 
@@ -201,33 +290,6 @@ public partial class TypePickerDrawer : PropertyDrawer
 
 		return inheritedTypes;
 	}
-
-	static Type GetPropertyFieldType(SerializedProperty property) => property.propertyType switch
-	{
-		SerializedPropertyType.Boolean => typeof(bool),
-		SerializedPropertyType.Float => typeof(float),
-		SerializedPropertyType.Integer => typeof(int),
-		SerializedPropertyType.String => typeof(string),
-		SerializedPropertyType.Bounds => typeof(Bounds),
-		SerializedPropertyType.Character => typeof(char),
-		SerializedPropertyType.Color => typeof(Color),
-		SerializedPropertyType.Enum => typeof(Enum),
-		SerializedPropertyType.Gradient => typeof(Gradient),
-		SerializedPropertyType.Quaternion => typeof(Quaternion),
-		SerializedPropertyType.Rect => typeof(Rect),
-		SerializedPropertyType.Vector2 => typeof(Vector2),
-		SerializedPropertyType.Vector3 => typeof(Vector3),
-		SerializedPropertyType.Vector4 => typeof(Vector4),
-		SerializedPropertyType.AnimationCurve => typeof(AnimationCurve),
-		SerializedPropertyType.BoundsInt => typeof(BoundsInt),
-		SerializedPropertyType.LayerMask => typeof(LayerMask),
-		SerializedPropertyType.RectInt => typeof(RectInt),
-		SerializedPropertyType.Vector2Int => typeof(Vector2Int),
-		SerializedPropertyType.Vector3Int => typeof(Vector3Int),
-		SerializedPropertyType.ManagedReference => property.GetManagedReferenceFieldType(),
-		_ => property.GetObjectOfProperty()?.GetType(),
-	};
-
 
 	public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
 	{
