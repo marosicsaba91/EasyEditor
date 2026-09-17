@@ -52,6 +52,7 @@ public partial class TypePickerDrawer : PropertyDrawer
 
 		}
 		
+		pickerRect.height = EditorGUIUtility.singleLineHeight;
 		bool pickerClicked = Event.current.type == EventType.MouseDown &&
 			Event.current.button == 0 && pickerRect.Contains(Event.current.mousePosition);
 		if (pickerClicked)
