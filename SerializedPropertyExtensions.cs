@@ -106,7 +106,7 @@ namespace EasyEditor
 
 			return obj;
 		}
-		
+
 		public static object GetObjectOfProperty(this SerializedProperty prop, out Type typeOfResult)
 		{
 			typeOfResult = null;
@@ -144,9 +144,10 @@ namespace EasyEditor
 				const BindingFlags mask = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 				FieldInfo field = containingType.GetField(elementName, mask);
 				parentAndFields.Add((containingObject, field, index));
-				containingObject = index >= 0
-					? GetValueAt_(containingObject, field, index)
-					: field.GetValue(containingObject);
+				if (field != null)
+					containingObject = index >= 0
+						? GetValueAt_(containingObject, field, index)
+						: field.GetValue(containingObject);
 			}
 
 			Object target = property.serializedObject.targetObject;
@@ -302,8 +303,8 @@ namespace EasyEditor
 		public static bool IsNumericValue(this SerializedProperty prop) => prop.propertyType switch
 		{
 			SerializedPropertyType.Integer or SerializedPropertyType.Boolean or
-			SerializedPropertyType.Float or SerializedPropertyType.ArraySize or
-			SerializedPropertyType.Character => true,
+				SerializedPropertyType.Float or SerializedPropertyType.ArraySize or
+				SerializedPropertyType.Character => true,
 			_ => false,
 		};
 
@@ -339,8 +340,14 @@ namespace EasyEditor
 		public static bool IsExpandable(this SerializedProperty property)
 		{
 			if (property.propertyType is SerializedPropertyType.Integer or SerializedPropertyType.Boolean or
-				SerializedPropertyType.String or SerializedPropertyType.Vector2 or SerializedPropertyType.Vector3 or
-				SerializedPropertyType.AnimationCurve or SerializedPropertyType.LayerMask)
+				SerializedPropertyType.Float or SerializedPropertyType.String or SerializedPropertyType.Color or
+				SerializedPropertyType.ObjectReference or SerializedPropertyType.LayerMask or SerializedPropertyType.Enum or
+				SerializedPropertyType.Vector2 or SerializedPropertyType.Vector3 or
+				SerializedPropertyType.Rect or SerializedPropertyType.ArraySize or SerializedPropertyType.Character or
+				SerializedPropertyType.AnimationCurve or SerializedPropertyType.Bounds or SerializedPropertyType.Gradient or
+				SerializedPropertyType.Quaternion or SerializedPropertyType.ExposedReference or SerializedPropertyType.FixedBufferSize or
+				SerializedPropertyType.Vector2Int or SerializedPropertyType.Vector3Int or SerializedPropertyType.RectInt or
+				SerializedPropertyType.BoundsInt or SerializedPropertyType.Hash128 or SerializedPropertyType.RenderingLayerMask)
 				return false;
 			return true;
 		}

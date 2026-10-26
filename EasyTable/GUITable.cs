@@ -2,20 +2,22 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace EasyEditor
 {
-	public class GUITable
+	[AutoStaticsCleanup]
+	public partial class GUITable
 	{
 		protected static GUIStyle rowButtonStyle;
 	}
 
 	public class GUITable<TRowType> : GUITable
 	{
-		public List<IColumn<TRowType>> columns;
+		public readonly List<IColumn<TRowType>> columns;
 
 		// Optionally Modifiable Fields 
 		public float rowHeight = EditorGUIUtility.singleLineHeight;
@@ -23,8 +25,8 @@ namespace EasyEditor
 		public Action<int, TRowType> clickOnRow;
 		public Func<Object> editedObjectGetter; // Makes it dirty if the table has been edited 
 		public Func<string> emptyCollectionTextGetter = () => "Collection is empty";
-		public bool drawHeader = true;
-		public EditorWindow window;
+		public readonly bool drawHeader = true;
+		public readonly EditorWindow window;
 
 		// Private Fields
 		Vector2 _scrollPos;
@@ -220,9 +222,7 @@ namespace EasyEditor
 			}
 		}
 
-		float TableHeight(int rowCount) => HeaderHeight + RowsHeight(rowCount);
-		float HeaderHeight => drawHeader ? 22 : 0;
-		float RowsHeight(int rowCount) => rowHeight * Mathf.Max(1, rowCount);
+		float HeaderHeight => drawHeader ? 22 : 0; 
 	}
 }
 #endif

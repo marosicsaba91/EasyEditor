@@ -19,26 +19,26 @@ namespace EasyEditor
 		public List<string> openedObjects;
 		public List<TableViewSetting_Column> properties;
 
-		Type cachedObjectType;
+		Type _cachedObjectType;
 
 		public Type ObjectType
 		{
 			get
 			{
-				if (cachedObjectType != null) return cachedObjectType;
+				if (_cachedObjectType != null) return _cachedObjectType;
 				if (fullTypeName == null) return null;
 				string n = fullTypeName;
-				cachedObjectType = TableViewCache.GetAllScriptableTypes().Find(x => x.FullName == n);
-				if (cachedObjectType == null)
-					cachedObjectType = TableViewCache.GetAllMonoBehaviourTypes().Find(x => x.FullName == n);
-				return cachedObjectType;
+				_cachedObjectType = TableViewCache.GetAllScriptableTypes().Find(x => x.FullName == n);
+				if (_cachedObjectType == null)
+					_cachedObjectType = TableViewCache.GetAllMonoBehaviourTypes().Find(x => x.FullName == n);
+				return _cachedObjectType;
 			}
 		}
 
 		public TableViewSetting_Type(Type type)
 		{
 			fullTypeName = type.FullName;
-			cachedObjectType = type;
+			_cachedObjectType = type;
 			name = type.Name;
 			isPinned = true;
 			showFiles = true;

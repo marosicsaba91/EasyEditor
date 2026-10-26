@@ -2,69 +2,71 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace EasyEditor
 {
+	[AutoStaticsCleanup]
 	public static partial class EditorHelper
 	{
-		static readonly float tableMarginBrightness = EditorGUIUtility.isProSkin ? 0.2f : 0.9f;
+		static readonly float _tableMarginBrightness = EditorGUIUtility.isProSkin ? 0.2f : 0.9f;
 		public static readonly Color tableMarginColor =
-			new(tableMarginBrightness, tableMarginBrightness, tableMarginBrightness);
+			new(_tableMarginBrightness, _tableMarginBrightness, _tableMarginBrightness);
 
-		static readonly float tableBackgroundBrightness = EditorGUIUtility.isProSkin ? 0.275f : 0.891f;
+		static readonly float _tableBackgroundBrightness = EditorGUIUtility.isProSkin ? 0.275f : 0.891f;
 		public static readonly Color tableBackgroundColor =
-			new(tableBackgroundBrightness, tableBackgroundBrightness, tableBackgroundBrightness);
+			new(_tableBackgroundBrightness, _tableBackgroundBrightness, _tableBackgroundBrightness);
 
-		static readonly float tableBorderBrightness = EditorGUIUtility.isProSkin ? 0.15f : 0.7f;
+		static readonly float _tableBorderBrightness = EditorGUIUtility.isProSkin ? 0.15f : 0.7f;
 		public static readonly Color tableBorderColor =
-			new(tableBorderBrightness, tableBorderBrightness, tableBorderBrightness, 1);
+			new(_tableBorderBrightness, _tableBorderBrightness, _tableBorderBrightness, 1);
 
-		static readonly float tableEvenLineBrightness = EditorGUIUtility.isProSkin ? 0.165f : 0.95f;
+		static readonly float _tableEvenLineBrightness = EditorGUIUtility.isProSkin ? 0.165f : 0.95f;
 		public static readonly Color tableEvenLineColor =
-			new(tableEvenLineBrightness, tableEvenLineBrightness, tableEvenLineBrightness, 0.3f);
+			new(_tableEvenLineBrightness, _tableEvenLineBrightness, _tableEvenLineBrightness, 0.3f);
 
-		static readonly float tableOddLineBrightness = EditorGUIUtility.isProSkin ? 0.125f : 0.85f;
+		static readonly float _tableOddLineBrightness = EditorGUIUtility.isProSkin ? 0.125f : 0.85f;
 		public static readonly Color tableOddLineColor =
-			new(tableOddLineBrightness, tableOddLineBrightness, tableOddLineBrightness, 0.4f);
+			new(_tableOddLineBrightness, _tableOddLineBrightness, _tableOddLineBrightness, 0.4f);
 
-		static readonly float tableSelectedBrightness = EditorGUIUtility.isProSkin ? 0.8f : 0;
+		static readonly float _tableSelectedBrightness = EditorGUIUtility.isProSkin ? 0.8f : 0;
 		public static readonly Color tableSelectedColor =
-			new(tableSelectedBrightness, tableSelectedBrightness, tableSelectedBrightness, 0.2f);
+			new(_tableSelectedBrightness, _tableSelectedBrightness, _tableSelectedBrightness, 0.2f);
 
-		static readonly float tableHoverBrightness = EditorGUIUtility.isProSkin ? 1 : 0;
+		static readonly float _tableHoverBrightness = EditorGUIUtility.isProSkin ? 1 : 0;
 		public static readonly Color tableHoverColor =
-			new(tableHoverBrightness, tableHoverBrightness, tableHoverBrightness, 0.08f);
+			new(_tableHoverBrightness, _tableHoverBrightness, _tableHoverBrightness, 0.08f);
 
 		public static readonly Color successGreenColor = new(0.75f, 1f, 0.45f);
 		public static readonly Color successBackgroundColor = new(0.75f, 1f, 0.45f, 0.2f);
-		static readonly Color errorRedColorLight = new(0.95f, 0.2f, 0.25f);
-		static readonly Color errorRedColorDark = new(0.95f, 0.4f, 0.39f);
-		public static Color ErrorRedColor => EditorGUIUtility.isProSkin ? errorRedColorDark : errorRedColorLight;
+		static readonly Color _errorRedColorLight = new(0.95f, 0.2f, 0.25f);
+		static readonly Color _errorRedColorDark = new(0.95f, 0.4f, 0.39f);
+		public static Color ErrorRedColor => EditorGUIUtility.isProSkin ? _errorRedColorDark : _errorRedColorLight;
 
-		static readonly Color errorBackgroundColorLight = new(1f, 0.65f, 0.6f);
-		static readonly Color errorBackgroundColorDark = new(0.56f, 0.23f, 0.21f);
+		static readonly Color _errorBackgroundColorLight = new(1f, 0.65f, 0.6f);
+		static readonly Color _errorBackgroundColorDark = new(0.56f, 0.23f, 0.21f);
 
-		static readonly Color warningBackgroundColorLight = new(1f, 0.65f, 0.6f);
-		static readonly Color warningBackgroundColorDark = new(0.56f, 0.23f, 0.21f);
+		static readonly Color _warningBackgroundColorLight = new(1f, 0.65f, 0.6f);
+		static readonly Color _warningBackgroundColorDark = new(0.56f, 0.23f, 0.21f);
 		public static Color ErrorBackgroundColor =>
-			EditorGUIUtility.isProSkin ? errorBackgroundColorDark : errorBackgroundColorLight;
+			EditorGUIUtility.isProSkin ? _errorBackgroundColorDark : _errorBackgroundColorLight;
 		public static Color WarningBackgroundColor =>
-			EditorGUIUtility.isProSkin ? warningBackgroundColorDark : warningBackgroundColorLight;
+			EditorGUIUtility.isProSkin ? _warningBackgroundColorDark : _warningBackgroundColorLight;
 
 		public static readonly Color functionColor =
 			EditorGUIUtility.isProSkin ? Color.yellow : new Color(0.2f, 0.56f, 1f);
 
 
-		static readonly float buttonBackgroundBrightness = EditorGUIUtility.isProSkin ? 0.35f : 0.89f;
+		static readonly float _buttonBackgroundBrightness = EditorGUIUtility.isProSkin ? 0.35f : 0.89f;
 		public static readonly Color buttonBackgroundColor =
-			new(buttonBackgroundBrightness, buttonBackgroundBrightness, buttonBackgroundBrightness, 1);
+			new(_buttonBackgroundBrightness, _buttonBackgroundBrightness, _buttonBackgroundBrightness, 1);
 
-		static readonly float buttonBorderBrightness = EditorGUIUtility.isProSkin ? 0.14f : 0.70f;
+		static readonly float _buttonBorderBrightness = EditorGUIUtility.isProSkin ? 0.14f : 0.70f;
 		public static readonly Color buttonBorderColor =
-			new(buttonBorderBrightness, buttonBorderBrightness, buttonBorderBrightness, 1);
+			new(_buttonBorderBrightness, _buttonBorderBrightness, _buttonBorderBrightness, 1);
 
 
 		// Drawing Inspector
@@ -327,13 +329,12 @@ namespace EasyEditor
 			return enumValue;
 		}
 
-
 		public static T DrawEnumToggle<T>(Rect position, T enumValue, Func<T, bool> isEnabled = null) where T : Enum => DrawEnumToggle(position, null as GUIContent, enumValue, isEnabled);
 		public static T DrawEnumToggle<T>(Rect position, string label, T enumValue, Func<T, bool> isEnabled = null) where T : Enum => DrawEnumToggle(position, new GUIContent(label), enumValue, isEnabled);
 
 		public static T DrawEnumToggle<T>(Rect position, GUIContent label, T enumValue, Func<T, bool> isEnabled = null) where T : Enum
 		{
-			List<T> enumValues = System.Enum.GetValues(typeof(T)).Cast<T>().ToList();
+			List<T> enumValues = Enum.GetValues(typeof(T)).Cast<T>().ToList();
 
 			Rect labelRect = position.SliceOut(LabelWidth, Side.Left, false);
 			if (label != null && label != GUIContent.none)

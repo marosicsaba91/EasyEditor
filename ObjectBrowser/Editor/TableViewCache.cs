@@ -2,8 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Xml.Linq;
+using System.Reflection; 
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assemblies;
@@ -11,38 +11,39 @@ using Object = UnityEngine.Object;
 
 namespace EasyEditor
 {
-	public static class TableViewCache
+	[AutoStaticsCleanup]
+	public static partial class TableViewCache
 	{
-		static List<Type> allScriptableObjectTypeCached;
-		static List<Type> allMonoBehaviourTypesCached;
-		static readonly Dictionary<Type, List<Type>> subTypeCache = new();
+		static List<Type> _allScriptableObjectTypeCached;
+		static List<Type> _allMonoBehaviourTypesCached;
+		static readonly Dictionary<Type, List<Type>> _subTypeCache = new();
 
-		static readonly Dictionary<Type, List<Object>> scriptableObjectCache = new();
-		static readonly Dictionary<Type, List<Object>> monoBehaviourScenesCache = new();
-		static readonly Dictionary<Type, List<Object>> monoBehaviourPrefabsCache = new();
+		static readonly Dictionary<Type, List<Object>> _scriptableObjectCache = new();
+		static readonly Dictionary<Type, List<Object>> _monoBehaviourScenesCache = new();
+		static readonly Dictionary<Type, List<Object>> _monoBehaviourPrefabsCache = new();
 
-		static readonly Dictionary<Type, TableViewDrawer> customDrawerCache = new();
+		static readonly Dictionary<Type, TableViewDrawer> _customDrawerCache = new();
 		static TableViewDrawer _dummyDrawer;
 
 		public static List<Type> GetAllScriptableTypes()
 		{
-			if (allScriptableObjectTypeCached == null)
+			if (_allScriptableObjectTypeCached == null)
 				AnaliseAndCacheAppDomain();
-			return allScriptableObjectTypeCached;
+			return _allScriptableObjectTypeCached;
 		}
 
 		public static List<Type> GetAllMonoBehaviourTypes()
 		{
-			if (allMonoBehaviourTypesCached == null)
+			if (_allMonoBehaviourTypesCached == null)
 				AnaliseAndCacheAppDomain();
-			return allMonoBehaviourTypesCached;
+			return _allMonoBehaviourTypesCached;
 		}
 
 		public static void CleanupObjectCache()
 		{
-			CleanupDictionary(scriptableObjectCache);
-			CleanupDictionary(monoBehaviourScenesCache);
-			CleanupDictionary(monoBehaviourPrefabsCache);
+			CleanupDictionary(_scriptableObjectCache);
+			CleanupDictionary(_monoBehaviourScenesCache);
+			CleanupDictionary(_monoBehaviourPrefabsCache);
 		}
 
 		static void CleanupDictionary(Dictionary<Type, List<Object>> dictionary)
@@ -55,25 +56,25 @@ namespace EasyEditor
 
 		public static List<Type> GetAllNonAbstractSubclassesOf(Type baseType)
 		{
-			if (allMonoBehaviourTypesCached == null)
+			if (_allMonoBehaviourTypesCached == null)
 				AnaliseAndCacheAppDomain();
 
-			if (!subTypeCache.TryGetValue(baseType, out List<Type> subTypes))
+			if (!_subTypeCache.TryGetValue(baseType, out List<Type> subTypes))
 			{
 				subTypes = new();
 				List<Type> list;
 				if (baseType.IsSubclassOf(typeof(ScriptableObject)))
-					list = allScriptableObjectTypeCached;
+					list = _allScriptableObjectTypeCached;
 				else if (baseType.IsSubclassOf(typeof(MonoBehaviour)))
-					list = allMonoBehaviourTypesCached;
+					list = _allMonoBehaviourTypesCached;
 				else
 					return null;
 
-				foreach (Type type in list)
+				foreach (Type type in list!)
 					if (baseType.IsAssignableFrom(type) && !type.IsAbstract)
 						subTypes.Add(type);
 
-				subTypeCache.Add(baseType, subTypes);
+				_subTypeCache.Add(baseType, subTypes);
 			}
 			return subTypes;
 		}
@@ -81,8 +82,8 @@ namespace EasyEditor
 
 		static void AnaliseAndCacheAppDomain()
 		{
-			allScriptableObjectTypeCached = new();
-			allMonoBehaviourTypesCached = new();
+			_allScriptableObjectTypeCached = new();
+			_allMonoBehaviourTypesCached = new();
 
 			Type customDrawerType = typeof(TableViewDrawer);
 
@@ -94,15 +95,15 @@ namespace EasyEditor
 					if (typeof(UnityEditor.Editor).IsAssignableFrom(type)) continue;
 
 					if (type.IsSubclassOf(typeof(ScriptableObject)))
-						allScriptableObjectTypeCached.Add(type);
+						_allScriptableObjectTypeCached.Add(type);
 					else if (type.IsSubclassOf(typeof(MonoBehaviour)))
-						allMonoBehaviourTypesCached.Add(type);
+						_allMonoBehaviourTypesCached.Add(type);
 
-					if (customDrawerType.IsAssignableFrom(type) && !type.IsAbstract && type.BaseType.IsGenericType)
+					if (customDrawerType.IsAssignableFrom(type) && !type.IsAbstract && type.BaseType is { IsGenericType: true })
 					{
 						Type genericParameter = type.BaseType.GetGenericArguments()[0];
-						if (!customDrawerCache.ContainsKey(genericParameter))
-							customDrawerCache.Add(genericParameter, (TableViewDrawer)Activator.CreateInstance(type));
+						if (!_customDrawerCache.ContainsKey(genericParameter))
+							_customDrawerCache.Add(genericParameter, (TableViewDrawer)Activator.CreateInstance(type));
 					}
 				}
 		}
@@ -132,10 +133,10 @@ namespace EasyEditor
 
 		public static List<Object> GetScriptableObjectsByType(Type type)
 		{
-			if (!scriptableObjectCache.TryGetValue(type, out List<Object> objects))
+			if (!_scriptableObjectCache.TryGetValue(type, out List<Object> objects))
 			{
 				objects = FindAllScriptableObjectInstances(type);
-				scriptableObjectCache.Add(type, objects);
+				_scriptableObjectCache.Add(type, objects);
 			}
 
 			return objects;
@@ -143,10 +144,10 @@ namespace EasyEditor
 
 		static List<Object> GetInSceneMonoBehavioursByType(Type type)
 		{
-			if (!monoBehaviourScenesCache.TryGetValue(type, out List<Object> objects))
+			if (!_monoBehaviourScenesCache.TryGetValue(type, out List<Object> objects))
 			{
 				objects = Object.FindObjectsByType(type, FindObjectsInactive.Exclude).ToList();
-				monoBehaviourScenesCache.Add(type, objects);
+				_monoBehaviourScenesCache.Add(type, objects);
 			}
 
 			return objects;
@@ -154,10 +155,10 @@ namespace EasyEditor
 
 		static List<Object> GetPrefabMonoBehavioursByType(Type type)
 		{
-			if (!monoBehaviourPrefabsCache.TryGetValue(type, out List<Object> prefabs))
+			if (!_monoBehaviourPrefabsCache.TryGetValue(type, out List<Object> prefabs))
 			{
 				prefabs = FindAllPrefabInstances(type);
-				monoBehaviourPrefabsCache.Add(type, prefabs);
+				_monoBehaviourPrefabsCache.Add(type, prefabs);
 			}
 
 			return prefabs;
@@ -196,11 +197,11 @@ namespace EasyEditor
 		public static void AddInstance(Type idType, Object newId)
 		{
 			while (idType != typeof(ScriptableObject) && idType != typeof(MonoBehaviour) && idType != typeof(object))
-			{
-				if (!scriptableObjectCache.TryGetValue(idType, out List<Object> identifiers))
+			{ 
+				if (!_scriptableObjectCache.TryGetValue(idType!, out List<Object> identifiers))
 				{
 					identifiers = new();
-					scriptableObjectCache.Add(idType, identifiers);
+					_scriptableObjectCache.Add(idType, identifiers);
 				}
 				identifiers.Add(newId);
 				idType = idType.BaseType;
@@ -209,7 +210,7 @@ namespace EasyEditor
 
 		public static void RemoveInstance(Type idType, Object identifier)
 		{
-			if (!scriptableObjectCache.TryGetValue(idType, out List<Object> identifiers))
+			if (!_scriptableObjectCache.TryGetValue(idType, out List<Object> identifiers))
 				return;
 
 			identifiers.Remove(identifier);
@@ -218,14 +219,14 @@ namespace EasyEditor
 
 		public static void ClearCache()
 		{
-			scriptableObjectCache.Clear();
-			monoBehaviourScenesCache.Clear();
-			monoBehaviourPrefabsCache.Clear();
+			_scriptableObjectCache.Clear();
+			_monoBehaviourScenesCache.Clear();
+			_monoBehaviourPrefabsCache.Clear();
 		}
 
 		public static TableViewDrawer GetCustomDrawer(Type objectType)
 		{
-			if (customDrawerCache.TryGetValue(objectType, out TableViewDrawer drawer))
+			if (_customDrawerCache.TryGetValue(objectType, out TableViewDrawer drawer))
 				return drawer;
 			else
 			{

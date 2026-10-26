@@ -3,13 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assemblies;
 
 namespace EasyEditor
 {
-	public static class InspectorDrawingUtility
+	[AutoStaticsCleanup]
+	public static partial class InspectorDrawingUtility
 	{
 		public const BindingFlags bindings =
 			BindingFlags.Instance |
@@ -22,12 +24,12 @@ namespace EasyEditor
 		/// Key is Associated with drawer type (the T in [CustomPropertyDrawer(typeof(T))])
 		/// Value is PropertyDrawer Type
 		/// </summary>
-		static readonly Dictionary<Type, Type> propertyDrawersInAssembly = new();
+		static readonly Dictionary<Type, Type> _propertyDrawersInAssembly = new();
 
 		static readonly Dictionary<int, PropertyDrawer>
-			propertyDrawersCache = new();
+			_propertyDrawersCache = new();
 
-		static readonly string ignoreScope = typeof(int).Module.ScopeName;
+		static readonly string _ignoreScope = typeof(int).Module.ScopeName;
 
 		/// <summary>
 		/// Create PropertyDrawer for specified property if any PropertyDrawerType for such property is found.
@@ -37,7 +39,7 @@ namespace EasyEditor
 			Attribute attribute)
 		{
 			int propertyId = property.GetUniquePropertyId();
-			if (propertyDrawersCache.TryGetValue(propertyId, out PropertyDrawer drawer))
+			if (_propertyDrawersCache.TryGetValue(propertyId, out PropertyDrawer drawer))
 				return drawer;
 
 			Type targetType = fieldInfo.FieldType;
@@ -52,7 +54,7 @@ namespace EasyEditor
 						property.serializedObject.targetObject);
 			}
 
-			propertyDrawersCache[propertyId] = drawer;
+			_propertyDrawersCache[propertyId] = drawer;
 			return drawer;
 		}
 
@@ -82,7 +84,7 @@ namespace EasyEditor
 		public static Type GetPropertyDrawerTypeForFieldType(Type drawerTarget)
 		{
 			// Ignore .net types from mscorlib.dll
-			if (drawerTarget.Module.ScopeName.Equals(ignoreScope))
+			if (drawerTarget.Module.ScopeName.Equals(_ignoreScope))
 				return null;
 			CacheDrawersInAssembly();
 
@@ -91,7 +93,7 @@ namespace EasyEditor
 			Type checkType = drawerTarget;
 			while (checkType != null)
 			{
-				if (propertyDrawersInAssembly.TryGetValue(drawerTarget, out Type drawer))
+				if (_propertyDrawersInAssembly.TryGetValue(drawerTarget, out Type drawer))
 					return drawer;
 				checkType = checkType.BaseType;
 			}
@@ -113,7 +115,7 @@ namespace EasyEditor
 
 		static void CacheDrawersInAssembly()
 		{
-			if (propertyDrawersInAssembly != null && propertyDrawersInAssembly.Count > 0)
+			if (_propertyDrawersInAssembly is { Count: > 0 })
 				return;
 
 			Type propertyDrawerType = typeof(PropertyDrawer);
@@ -124,15 +126,11 @@ namespace EasyEditor
 			foreach (Type drawerType in allDrawerTypesInDomain)
 			{
 				CustomAttributeData propertyDrawerAttribute = CustomAttributeData.GetCustomAttributes(drawerType).FirstOrDefault();
-				if (propertyDrawerAttribute == null)
-					continue;
-				Type drawerTargetType = propertyDrawerAttribute.ConstructorArguments.FirstOrDefault().Value as Type;
+				Type drawerTargetType = propertyDrawerAttribute?.ConstructorArguments.FirstOrDefault().Value as Type;
 				if (drawerTargetType == null)
 					continue;
 
-				if (propertyDrawersInAssembly.ContainsKey(drawerTargetType))
-					continue;
-				propertyDrawersInAssembly.Add(drawerTargetType, drawerType);
+				_propertyDrawersInAssembly?.TryAdd(drawerTargetType, drawerType);
 			}
 		}
 
@@ -140,7 +138,7 @@ namespace EasyEditor
 		{
 			if (string.IsNullOrEmpty(memberName))
 			{
-				getter = default;
+				getter = null;
 				return false;
 			}
 
@@ -177,7 +175,7 @@ namespace EasyEditor
 					returnType.IsSubclassOf(expectedType);
 
 				ParameterInfo[] parameters = method.GetParameters();
-				bool hasNoParameters = parameters == null || parameters.Length == 0;
+				bool hasNoParameters = parameters.Length == 0;
 
 				if (isReturnTypeValid && hasNoParameters)
 				{

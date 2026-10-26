@@ -3,32 +3,34 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 
 namespace EasyEditor
 {
 	[Serializable]
-	class TableViewSetting : ScriptableObject
+	[AutoStaticsCleanup]
+	partial class TableViewSetting : ScriptableObject
 	{  
 		// ----------------- Singleton -----------------
 
-		static TableViewSetting instance;
+		static TableViewSetting _instance;
 
 		public static TableViewSetting Instance
 		{
 			get
 			{
-				if (instance == null)
+				if (_instance == null)
 				{
 					string path = AssetDatabase.FindAssets("t:TableViewSetting")
-						.Select(guid => AssetDatabase.GUIDToAssetPath(guid))
+						.Select(AssetDatabase.GUIDToAssetPath)
 						.ToList()
 						.FirstOrDefault();
 					if (!string.IsNullOrEmpty(path))
-						instance = AssetDatabase.LoadAssetAtPath<TableViewSetting>(path);
+						_instance = AssetDatabase.LoadAssetAtPath<TableViewSetting>(path);
 				}
-				return instance;
+				return _instance;
 			}
 		}
 
@@ -56,7 +58,7 @@ namespace EasyEditor
 			int index = allTypeInfo.FindIndex(x => x.fullTypeName == typeDisplaySetting.fullTypeName);
 			if (index == -1) return;
 			allTypeInfo.RemoveAt(index);
-			SetSODirty();
+			SetSoDirty();
 		}
 
 		public void CleanupSetting()
@@ -67,7 +69,7 @@ namespace EasyEditor
 				if (allTypeInfo[i].ObjectType == null)
 				{
 					allTypeInfo.RemoveAt(i);
-					SetSODirty();
+					SetSoDirty();
 				}
 			}
 		}
@@ -92,7 +94,7 @@ namespace EasyEditor
 				TableViewSetting_Type setting = new(type);
 				allTypeInfo.Add(setting);
 				selectedType = type.FullName;
-				SetSODirty();
+				SetSoDirty();
 			}
 			else
 			{
@@ -102,7 +104,7 @@ namespace EasyEditor
 					TableViewSetting_Type setting = allTypeInfo[index];
 					setting.isPinned = true;
 					selectedType = typeName;
-					SetSODirty();
+					SetSoDirty();
 				}
 			}
 		}
@@ -114,10 +116,10 @@ namespace EasyEditor
 
 			typeSetting.properties = new();
 			typeSetting.openedObjects = new();
-			SetSODirty();
+			SetSoDirty();
 		}
 
-		public void SetSODirty()
+		public void SetSoDirty()
 		{
 			EditorUtility.SetDirty(this);
 		}

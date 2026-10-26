@@ -2,68 +2,70 @@
 
 using System;
 using System.Collections.Generic;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 
 namespace EasyEditor
 {
-	class TypeSelectEditorWindow : EditorWindow
+	[AutoStaticsCleanup]
+	partial class TypeSelectEditorWindow : EditorWindow
 	{
 		public Type selectedType;
-		string search = string.Empty;
-		bool scriptableObjects = true;
-		bool monoBehaviours = true;
-		Vector2 scrollPosition;
+		string _search = string.Empty;
+		bool _scriptableObjects = true;
+		bool _monoBehaviours = true;
+		Vector2 _scrollPosition;
 
-		static Texture soPic;
-		static Texture mbPic;
+		static Texture _soPic;
+		static Texture _mbPic;
 
-		Type baseType = null;
+		Type _baseType = null;
 
 		public static Type Open(Type baseType = null)
 		{
 			TypeSelectEditorWindow window = CreateInstance<TypeSelectEditorWindow>();
-			window.baseType = baseType;
+			window._baseType = baseType;
 
-			soPic = soPic != null ? soPic : EditorGUIUtility.IconContent("ScriptableObject Icon").image;
-			mbPic = mbPic != null ? mbPic : EditorGUIUtility.IconContent("cs Script Icon").image;
+			_soPic = _soPic != null ? _soPic : EditorGUIUtility.IconContent("ScriptableObject Icon").image;
+			_mbPic = _mbPic != null ? _mbPic : EditorGUIUtility.IconContent("cs Script Icon").image;
 
 			window.ShowModal();
 			return window.selectedType;
 		}
 
-		List<Type> types;
+		List<Type> _types;
 
 		void OnGUI()
 		{
 			// Search field
-			if (baseType == null)
+			if (_baseType == null)
 			{
 				EditorGUILayout.BeginHorizontal();
-				bool so = GUILayout.Toggle(scriptableObjects, "ScriptableObjects", EditorStyles.toolbarButton);
-				bool mb = GUILayout.Toggle(monoBehaviours, "MonoBehaviours", EditorStyles.toolbarButton);
-				if (so != scriptableObjects || mb != monoBehaviours)
+				bool so = GUILayout.Toggle(_scriptableObjects, "ScriptableObjects", EditorStyles.toolbarButton);
+				bool mb = GUILayout.Toggle(_monoBehaviours, "MonoBehaviours", EditorStyles.toolbarButton);
+				if (so != _scriptableObjects || mb != _monoBehaviours)
 				{
-					scriptableObjects = so;
-					monoBehaviours = mb;
-					types = UpdateTypes();
+					_scriptableObjects = so;
+					_monoBehaviours = mb;
+					_types = UpdateTypes();
 				}
 				EditorGUILayout.EndHorizontal();
 			}
 
-			string searchResult = EditorGUILayout.TextField("Search", search);
-			if (searchResult != search)
+			string searchResult = EditorGUILayout.TextField("Search", _search);
+			if (searchResult != _search)
 			{
-				search = searchResult;
-				types = UpdateTypes();
+				_search = searchResult;
+				_types = UpdateTypes();
 			}
-			types ??= UpdateTypes();
+			_types ??= UpdateTypes();
 
-			scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
-			for (int i = 0; i < types.Count; i++)
+			_scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
+			for (int i = 0; i < _types.Count; i++)
 			{
-				Type type = types[i];
-				Texture icon = type.IsSubclassOf(typeof(ScriptableObject)) ? soPic : mbPic;
+				Type type = _types[i];
+				Texture icon = type.IsSubclassOf(typeof(ScriptableObject)) ? _soPic : _mbPic;
 				GUIContent content = new(" " + type.Name, icon);
 
 				if (GUI.Button(EditorGUILayout.GetControlRect(), content))
@@ -80,20 +82,20 @@ namespace EasyEditor
 		private List<Type> UpdateTypes()
 		{
 			List<Type> types = new();
-			if (baseType != null)
-				types = TableViewCache.GetAllNonAbstractSubclassesOf(baseType);
+			if (_baseType != null)
+				types = TableViewCache.GetAllNonAbstractSubclassesOf(_baseType);
 			else
 			{
-				if (scriptableObjects)
+				if (_scriptableObjects)
 					types.AddRange(TableViewCache.GetAllScriptableTypes());
-				if (monoBehaviours)
+				if (_monoBehaviours)
 					types.AddRange(TableViewCache.GetAllMonoBehaviourTypes());
 			}
 
-			if (!string.IsNullOrEmpty(search))
-				types = types.FindAll(x => x.Name.ToLower().Contains(search.ToLower()));
+			if (!string.IsNullOrEmpty(_search))
+				types = types.FindAll(x => x.Name.ToLower().Contains(_search.ToLower()));
 
-			types.Sort((t1, t2) => t1.Name.CompareTo(t2.Name));
+			types.Sort((t1, t2) => string.Compare(t1.Name, t2.Name, StringComparison.Ordinal));
 			return types;
 		}
 	}

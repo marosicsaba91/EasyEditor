@@ -21,7 +21,7 @@ namespace EasyEditor
 	[NoAutoStaticsCleanup]
 	class TableViewWindow : EditorWindow
 	{
-		const float spacing = 2;
+		const float _spacing = 2;
 
 		static readonly List<Object> _openedObjects = new();
 		static string _savePath = "ScriptableObjects";
@@ -43,11 +43,11 @@ namespace EasyEditor
 		public static void Open()
 		{
 			TableViewWindow window = GetWindow<TableViewWindow>();
-			window.titleContent = new GUIContent("Table View");
+			window.titleContent = new("Table View");
 		}
 		void OnGUI()
 		{
-			_selectedButtonStyle = new(GUI.skin.button) { fontStyle = FontStyle.Bold, normal = { textColor = new Color(0.5f, 0.7f, 1) } };
+			_selectedButtonStyle = new(GUI.skin.button) { fontStyle = FontStyle.Bold, normal = { textColor = new(0.5f, 0.7f, 1) } };
 
 			TableViewSetting settings = TableViewSetting.Instance;
 			if (settings == null)
@@ -98,11 +98,11 @@ namespace EasyEditor
 			Rect headerRect = fullWindowRect;
 			headerRect.SliceOut(0, Side.Top, addSpace: true);
 			headerRect.SliceOut(0, Side.Left, addSpace: true);
-			Rect actionButtonsRect = headerRect.SliceOut(actionButtonWidth * 5 + spacing * 5, Side.Right);
+			Rect actionButtonsRect = headerRect.SliceOut(actionButtonWidth * 5 + _spacing * 5, Side.Right);
 			actionButtonsRect.height = lineHeight;
 			float fullWindowWidth = fullWindowRect.width;
 			float availableWidth = headerRect.width;
-			Rect backgroundRect = new(0, 0, fullWindowWidth, lineHeight + spacing * 2);
+			Rect backgroundRect = new(0, 0, fullWindowWidth, lineHeight + _spacing * 2);
 
 			EditorHelper.DrawBox(backgroundRect, EditorHelper.buttonBackgroundColor);
 
@@ -151,9 +151,9 @@ namespace EasyEditor
 				if (x + nextWidth > availableWidth)
 				{
 					x = headerRect.x;
-					y += lineHeight + spacing;
-					fullHeaderHeight += lineHeight + spacing;
-					backgroundRect.y += lineHeight + spacing;
+					y += lineHeight + _spacing;
+					fullHeaderHeight += lineHeight + _spacing;
+					backgroundRect.y += lineHeight + _spacing;
 					EditorHelper.DrawBox(backgroundRect, EditorHelper.buttonBackgroundColor);
 				}
 
@@ -165,20 +165,20 @@ namespace EasyEditor
 				int count = objects.Count;
 
 				if (isSelected)
-					GUI.color = new Color(0.8f, 0.8f, 0.8f);
+					GUI.color = new(0.8f, 0.8f, 0.8f);
 				GUIStyle style = isSelected ? _selectedButtonStyle : GUI.skin.button;
 				if (GUI.Button(tabRect, new GUIContent($" {name} ({count})", texture), style))
 					settings.SetSelectedType(type);
 				GUI.color = Color.white;
 
-				x += nextWidth + spacing;
+				x += nextWidth + _spacing;
 			}
 
 			EditorGUILayout.GetControlRect(GUILayout.Height(fullHeaderHeight));
-			fullWindowRect.SliceOut(fullHeaderHeight + spacing * 3, Side.Top, addSpace: false);
+			fullWindowRect.SliceOut(fullHeaderHeight + _spacing * 3, Side.Top, addSpace: false);
 
 			static float GetButtonWidth(string name) =>
-				GUI.skin.button.CalcSize(new GUIContent(name)).x + buttonWidthExtra;
+				GUI.skin.button.CalcSize(new(name)).x + buttonWidthExtra;
 		}
 
 		void DrawObjectClass(TableViewSetting settings, TableViewSetting_Type typeDisplaySetting, ref Rect fullWindowRect)
@@ -201,10 +201,10 @@ namespace EasyEditor
 				// Calculate header height
 				foreach (ObjectsBrowserColumn column in columns)
 				{
-					float labelWidth = GUI.skin.label.CalcSize(new GUIContent(column.label)).x;
+					float labelWidth = GUI.skin.label.CalcSize(new(column.label)).x;
 					if (labelWidth > column.width)
 						headerHeight = MathF.Max(headerHeight, labelWidth);
-					fullWidth += column.width + spacing;
+					fullWidth += column.width + _spacing;
 				}
 			}
 
@@ -242,7 +242,7 @@ namespace EasyEditor
 			if (newNameW != typeDisplaySetting.nameWidth)
 			{
 				typeDisplaySetting.nameWidth = newNameW;
-				settings.SetSODirty();
+				settings.SetSoDirty();
 				Repaint();
 			}
 
@@ -251,7 +251,7 @@ namespace EasyEditor
 			{
 				ObjectsBrowserColumn column = columns[i];
 				Rect rect = headerRect.SliceOut(column.width, Side.Left, false);
-				float labelWidth = GUI.skin.label.CalcSize(new GUIContent(column.label)).x;
+				float labelWidth = GUI.skin.label.CalcSize(new(column.label)).x;
 				rect.x -= 2;
 				if (labelWidth > column.width)
 				{
@@ -277,11 +277,11 @@ namespace EasyEditor
 				if (newW != column.width)
 				{
 					typeDisplaySetting.SetColumnWidth(typeDisplaySetting.fullTypeName, column.propertyName, newW);
-					settings.SetSODirty();
+					settings.SetSoDirty();
 					Repaint();
 				}
 			}
-			fullWindowRect.SliceOut(headerHeight, Side.Top, addSpace: false);
+			fullWindowRect.SliceOut(headerHeight, addSpace: false);
 
 			// Draw objects
 
@@ -348,7 +348,7 @@ namespace EasyEditor
 			resizeRect.x -= 2;
 			resizeRect.width += 1;
 
-			EditorGUI.DrawRect(resizeRect, new Color(0, 0, 0, 0.2f));
+			EditorGUI.DrawRect(resizeRect, new(0, 0, 0, 0.2f));
 			Vector2 mouse = Event.current.mousePosition;
 			if (Event.current.type == EventType.MouseDown && resizeRect.Contains(mouse))
 			{
